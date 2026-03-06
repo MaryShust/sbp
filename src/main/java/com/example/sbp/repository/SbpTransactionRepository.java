@@ -11,12 +11,11 @@ import java.util.Optional;
 @Repository
 public interface SbpTransactionRepository extends JpaRepository<SbpTransaction, Long> {
     Optional<SbpTransaction> findByTransactionId(String transactionId);
-    List<SbpTransaction> findBySenderAccount_AccountNumber(String accountNumber);
-    List<SbpTransaction> findByReceiverAccount_AccountNumber(String accountNumber);
+    List<SbpTransaction> findBySenderBillId(Long senderBillId);
+    List<SbpTransaction> findByReceiverBillId(Long receiverBillId);
 
     @Query("SELECT t FROM SbpTransaction t WHERE " +
-            "t.senderAccount.accountNumber = :account OR " +
-            "t.receiverAccount.accountNumber = :account " +
+            "t.senderBillId = :billId OR t.receiverBillId = :billId " +
             "ORDER BY t.createdAt DESC")
-    List<SbpTransaction> findTransactionsByAccount(@Param("account") String accountNumber);
+    List<SbpTransaction> findTransactionsByBillId(@Param("billId") Long billId);
 }

@@ -1,9 +1,7 @@
 package com.example.sbp.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,6 +9,9 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "sbp_transactions")
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Setter
 @Getter
 public class SbpTransaction {
@@ -22,13 +23,17 @@ public class SbpTransaction {
     @Column(name = "transaction_id", unique = true, nullable = false)
     private String transactionId;
 
-    @ManyToOne
-    @JoinColumn(name = "sender_account_id", nullable = false)
-    private BankAccount senderAccount;
+    @Column(name = "sender_bill_id", nullable = false)
+    private Long senderBillId;
 
-    @ManyToOne
-    @JoinColumn(name = "receiver_account_id", nullable = false)
-    private BankAccount receiverAccount;
+    @Column(name = "sender_bank_bic", nullable = false)
+    private String senderBankBic;
+
+    @Column(name = "receiver_bill_id", nullable = false)
+    private Long receiverBillId;
+
+    @Column(name = "receiver_bank_bic", nullable = false)
+    private String receiverBankBic;
 
     @Column(name = "amount", nullable = false)
     private BigDecimal amount;

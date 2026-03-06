@@ -25,7 +25,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({
-            AccountNotFoundException.class,
+            BankAccountNotFoundException.class,
+            BillNotFoundException.class,
             TransactionNotFoundException.class
     })
     public ResponseEntity<Map<String, String>> handleNotFoundException(RuntimeException ex) {
@@ -34,9 +35,10 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({
-            AccountInactiveException.class,
-            InsufficientFundsException.class,
-            AccountAlreadyExistsException.class
+            BankAccountInactiveException.class,
+            BankAccountAlreadyExistsException.class,
+            BillInactiveException.class,
+            InsufficientFundsException.class
     })
     public ResponseEntity<Map<String, String>> handleBusinessException(RuntimeException ex) {
         return ResponseEntity.badRequest()

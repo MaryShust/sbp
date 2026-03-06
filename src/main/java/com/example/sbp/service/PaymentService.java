@@ -3,8 +3,10 @@ package com.example.sbp.service;
 import com.example.sbp.dto.PaymentRequestDTO;
 import com.example.sbp.dto.PaymentResponseDTO;
 import com.example.sbp.entity.BankAccount;
+import com.example.sbp.entity.Bill;
 import com.example.sbp.entity.SbpTransaction;
 import com.example.sbp.repository.BankAccountRepository;
+import com.example.sbp.repository.BillRepository;
 import com.example.sbp.repository.SbpTransactionRepository;
 import com.example.sbp.exception.*;
 import lombok.RequiredArgsConstructor;
@@ -14,12 +16,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentService {
 
+    private final BillRepository billRepository;
     private final BankAccountRepository accountRepository;
     private final SbpTransactionRepository transactionRepository;
     private static final BigDecimal COMMISSION_RATE = new BigDecimal("0.005"); // 0.5%
@@ -31,19 +35,38 @@ public class PaymentService {
         log.info("Processing SBP payment: {}", request);
 
         // Найти счет отправителя
-        BankAccount sender = accountRepository.findByAccountNumber(request.getSenderAccount())
-                .orElseThrow(() -> new AccountNotFoundException("Sender account not found"));
+        Bill senderBill = billRepository.findById(request.getSenderBillId())
+                .orElseThrow(() -> new BillNotFoundException("Не найден счет отправителя по id: " + request.getSenderBillId()));
 
-        if (!sender.getIsActive()) {
-            throw new AccountInactiveException("Sender account is inactive");
+        // Найти аккаунт отправителя
+        BankAccount senderAccount = accountRepository.findById(senderBill.getAccountId())
+                .orElseThrow(() -> new BankAccountNotFoundException("Аккаунт не найден с id: " + senderBill.getAccountId()));
+
+
+        // Проверка на активность аккаунта и счета отправителя
+        if (!senderAccount.getIsActive()) {
+            throw new BillInactiveException("Аккаунт отправителя не активен");
+        }
+        if (!senderBill.getIsActive()) {
+            throw new BillInactiveException("Счет отправителя не активен");
         }
 
         // Найти счет получателя
-        BankAccount receiver = findReceiverAccount(request.getReceiverIdentifier());
+        Bill receiverBill = findReceiverBill(request.getReceiverIdentifier());
+        // Проверит на активность счет получателя
+        // Проверять аккаунт не нужно, так как если он заблочен или на него наложен арест, то деньжата уйдут приставам
+        if (!receiverBill.getIsActive()) {
+            throw new BillInactiveException("Счет отправителя не активен");
+        }
+
+        // Найти аккаунт получателя
+        BankAccount receiverAccount = accountRepository.findById(receiverBill.getAccountId())
+                .orElseThrow(() -> new BankAccountNotFoundException("Аккаунт не найден с id: " + senderBill.getAccountId()));
+
 
         // Рассчитать комиссию
         BigDecimal commission;
-        if (sender.getId().equals(receiver.getId())) {
+        if (senderBill.getId().equals(receiverBill.getId())) {
             commission = new BigDecimal(0);
         } else {
             commission = calculateCommission(request.getAmount());
@@ -51,15 +74,22 @@ public class PaymentService {
 
         // Проверить достаточность средств
         BigDecimal totalAmount = request.getAmount().add(commission);
-        if (sender.getBalance().compareTo(totalAmount) < 0) {
-            throw new InsufficientFundsException("Insufficient funds");
+        if (senderBill.getBalance().compareTo(totalAmount) < 0) {
+            throw new InsufficientFundsException("Недостаточно средств на счете отправителя");
         }
 
         // Выполнить перевод
-        SbpTransaction transaction = createTransaction(sender, receiver, request, commission);
+        SbpTransaction transaction = createTransaction(
+                senderBill,
+                receiverBill,
+                senderAccount.getBankBic(),
+                receiverAccount.getBankBic(),
+                request,
+                commission
+        );
 
         // Обновить балансы
-        updateBalances(sender, receiver, request.getAmount(), commission);
+        updateBalances(senderBill, receiverBill, request.getAmount(), commission);
 
         // Обновить статус транзакции
         transaction.setStatus(SbpTransaction.TransactionStatus.SUCCESS);
@@ -71,11 +101,31 @@ public class PaymentService {
         return convertToResponseDTO(transaction);
     }
 
-    private BankAccount findReceiverAccount(String identifier) {
-        // Пытаемся найти по номеру телефона
-        return accountRepository.findByPhoneNumber(identifier)
-                .or(() -> accountRepository.findByAccountNumber(identifier))
-                .orElseThrow(() -> new AccountNotFoundException("Receiver account not found"));
+    private Bill findReceiverBill(String identifier) {
+        // Сначала пробуем найти как ID счета
+        Optional<Bill> billById = tryFindBillById(identifier);
+
+        // Если нашли по ID - возвращаем
+        return billById.orElseGet(() -> findDefaultBillByPhone(identifier));
+    }
+
+    private Optional<Bill> tryFindBillById(String identifier) {
+        try {
+            Long billId = Long.parseLong(identifier);
+            return billRepository.findById(billId);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    private Bill findDefaultBillByPhone(String identifier) {
+        BankAccount account = accountRepository.findByPhoneNumber(identifier)
+                .orElseThrow(() -> new BankAccountNotFoundException(
+                        "Аккаунт не найден по телефону: " + identifier));
+
+        return billRepository.findById(account.getDefaultBillId())
+                .orElseThrow(() -> new BillNotFoundException(
+                        "Дефолтный счет не найден для аккаунта с телефоном: " + identifier));
     }
 
     private BigDecimal calculateCommission(BigDecimal amount) {
@@ -92,40 +142,51 @@ public class PaymentService {
         return commission;
     }
 
-    private SbpTransaction createTransaction(BankAccount sender, BankAccount receiver,
-                                             PaymentRequestDTO request, BigDecimal commission) {
-        SbpTransaction transaction = new SbpTransaction();
-        transaction.setSenderAccount(sender);
-        transaction.setReceiverAccount(receiver);
-        transaction.setAmount(request.getAmount());
-        transaction.setCommission(commission);
-        transaction.setMessage(request.getMessage());
+    private SbpTransaction createTransaction(
+            Bill senderBill,
+            Bill receiverBill,
+            String senderBankBic,
+            String receiverBankBic,
+            PaymentRequestDTO request,
+            BigDecimal commission
+    ) {
+        SbpTransaction transaction = SbpTransaction.builder()
+                .senderBillId(senderBill.getId())
+                .senderBankBic(senderBankBic)
+                .receiverBillId(receiverBill.getId())
+                .receiverBankBic(receiverBankBic)
+                .amount(request.getAmount())
+                .commission(commission)
+                .status(SbpTransaction.TransactionStatus.PENDING)
+                .message(request.getMessage())
+                .build();
 
         return transactionRepository.save(transaction);
     }
 
-    private void updateBalances(BankAccount sender, BankAccount receiver,
-                                BigDecimal amount, BigDecimal commission) {
+    private void updateBalances(
+            Bill senderBill,
+            Bill receiverBill,
+            BigDecimal amount,
+            BigDecimal commission
+    ) {
         // Списать с отправителя
-        BigDecimal senderNewBalance = sender.getBalance()
+        senderBill.setBalance(senderBill.getBalance()
                 .subtract(amount)
-                .subtract(commission);
-        sender.setBalance(senderNewBalance);
-        accountRepository.save(sender);
+                .subtract(commission));
+        billRepository.save(senderBill);
 
         // Зачислить получателю
-        BigDecimal receiverNewBalance = receiver.getBalance()
-                .add(amount);
-        receiver.setBalance(receiverNewBalance);
-        accountRepository.save(receiver);
+        receiverBill.setBalance(receiverBill.getBalance().add(amount));
+        billRepository.save(receiverBill);
     }
 
     private PaymentResponseDTO convertToResponseDTO(SbpTransaction transaction) {
         PaymentResponseDTO response = new PaymentResponseDTO();
         response.setTransactionId(transaction.getTransactionId());
         response.setStatus(transaction.getStatus().toString());
-        response.setSenderAccount(transaction.getSenderAccount().getAccountNumber());
-        response.setReceiverAccount(transaction.getReceiverAccount().getAccountNumber());
+        response.setSenderBillId(transaction.getSenderBillId());
+        response.setReceiverBillId(transaction.getReceiverBillId());
         response.setAmount(transaction.getAmount());
         response.setCommission(transaction.getCommission());
         response.setMessage(transaction.getMessage());
@@ -135,10 +196,10 @@ public class PaymentService {
         return response;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public PaymentResponseDTO getTransactionStatus(String transactionId) {
         SbpTransaction transaction = transactionRepository.findByTransactionId(transactionId)
-                .orElseThrow(() -> new TransactionNotFoundException("Transaction not found"));
+                .orElseThrow(() -> new TransactionNotFoundException("Транзакция не найдена по id"));
 
         return convertToResponseDTO(transaction);
     }

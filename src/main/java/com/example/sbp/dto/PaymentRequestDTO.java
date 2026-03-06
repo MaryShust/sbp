@@ -4,17 +4,18 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-
 import java.math.BigDecimal;
 
 @Data
+@Setter
+@Getter
 public class PaymentRequestDTO {
 
-    @NotBlank(message = "Sender account is required")
-    private String senderAccount;
+    @NotNull(message = "Sender bill ID is required")
+    private Long senderBillId;
 
     @NotBlank(message = "Receiver identifier is required")
-    private String receiverIdentifier; // phone number or account number
+    private String receiverIdentifier; // может быть ID счета или номер телефона
 
     @NotNull(message = "Amount is required")
     @DecimalMin(value = "0.01", message = "Amount must be greater than 0")
