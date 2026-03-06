@@ -66,7 +66,7 @@ public class PaymentService {
 
         // Рассчитать комиссию
         BigDecimal commission;
-        if (senderBill.getId().equals(receiverBill.getId())) {
+        if (senderAccount.getId().equals(receiverAccount.getId())) {
             commission = new BigDecimal(0);
         } else {
             commission = calculateCommission(request.getAmount());
