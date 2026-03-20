@@ -33,7 +33,7 @@ public class BankAccountService {
             throw new BankAccountAlreadyExistsException("Номер телефона уже существует");
         }
 
-        // Создание аккаунта
+
         BankAccount account = BankAccount.builder()
                 .phoneNumber(bankAccountRequestDTO.getPhoneNumber())
                 .ownerName(bankAccountRequestDTO.getOwnerName())
@@ -45,7 +45,7 @@ public class BankAccountService {
         account = accountRepository.save(account);
         log.info("Account saved with ID: {}", account.getId());
 
-        // Создание дефолтного счета
+
         Bill defaultBill = Bill.builder()
                 .accountId(account.getId())
                 .balance(BigDecimal.ZERO)
@@ -85,7 +85,7 @@ public class BankAccountService {
         Bill defaultBill = billRepository.findById(account.getDefaultBillId())
                 .orElseThrow(() -> new BillNotFoundException("Дефолтный счет не найден"));
 
-        // Check if bill has been funded (balance > 0)
+        // Баланс должен быть положительным
         if (defaultBill.getBalance().compareTo(BigDecimal.ZERO) == 0) {
             defaultBill.setIsActive(true);
             defaultBill.setBalance(startBalance);

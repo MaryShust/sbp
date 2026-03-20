@@ -34,16 +34,16 @@ public class PaymentService {
     public PaymentResponseDTO processPayment(PaymentRequestDTO request) {
         log.info("Processing SBP payment: {}", request);
 
-        // Найти счет отправителя
+
         Bill senderBill = billRepository.findById(request.getSenderBillId())
                 .orElseThrow(() -> new BillNotFoundException("Не найден счет отправителя по id: " + request.getSenderBillId()));
 
-        // Найти аккаунт отправителя
+
         BankAccount senderAccount = accountRepository.findById(senderBill.getAccountId())
                 .orElseThrow(() -> new BankAccountNotFoundException("Аккаунт не найден с id: " + senderBill.getAccountId()));
 
 
-        // Проверка на активность аккаунта и счета отправителя
+
         if (!senderAccount.getIsActive()) {
             throw new BillInactiveException("Аккаунт отправителя не активен");
         }
@@ -51,20 +51,20 @@ public class PaymentService {
             throw new BillInactiveException("Счет отправителя не активен");
         }
 
-        // Найти счет получателя
+
         Bill receiverBill = findReceiverBill(request.getReceiverIdentifier());
-        // Проверит на активность счет получателя
+
         // Проверять аккаунт не нужно, так как если он заблочен или на него наложен арест, то деньжата уйдут приставам
         if (!receiverBill.getIsActive()) {
             throw new BillInactiveException("Счет отправителя не активен");
         }
 
-        // Найти аккаунт получателя
+
         BankAccount receiverAccount = accountRepository.findById(receiverBill.getAccountId())
                 .orElseThrow(() -> new BankAccountNotFoundException("Аккаунт не найден с id: " + senderBill.getAccountId()));
 
 
-        // Рассчитать комиссию
+
         BigDecimal commission;
         if (senderAccount.getId().equals(receiverAccount.getId())) {
             commission = new BigDecimal(0);
@@ -78,7 +78,7 @@ public class PaymentService {
             throw new InsufficientFundsException("Недостаточно средств на счете отправителя");
         }
 
-        // Выполнить перевод
+
         SbpTransaction transaction = createTransaction(
                 senderBill,
                 receiverBill,
@@ -88,7 +88,7 @@ public class PaymentService {
                 commission
         );
 
-        // Обновить балансы
+
         updateBalances(senderBill, receiverBill, request.getAmount(), commission);
 
         // Обновить статус транзакции

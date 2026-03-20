@@ -4,6 +4,7 @@ import com.example.sbp.dto.BillCreateRequestDTO;
 import com.example.sbp.dto.BillResponseDTO;
 import com.example.sbp.entity.BankAccount;
 import com.example.sbp.entity.Bill;
+import com.example.sbp.exception.BillNotBelongAccountExeption;
 import com.example.sbp.repository.BankAccountRepository;
 import com.example.sbp.repository.BillRepository;
 import com.example.sbp.exception.BankAccountNotFoundException;
@@ -51,6 +52,38 @@ public class BillService {
     public BillResponseDTO getBillById(Long id) {
         Bill bill = billRepository.findById(id)
                 .orElseThrow(() -> new BillNotFoundException("Счет не найден по id: " + id));
+        return mapToResponseDTO(bill);
+    }
+
+    @Transactional
+    public BillResponseDTO replenishBill(Long accountId, Long id, BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Сумма пополнения должна быть положительной");
+        }
+
+        Bill bill = billRepository.findById(id)
+                .orElseThrow(() -> new BillNotFoundException("Счет не найден по id: " + id));
+
+        BankAccount account = accountRepository.findById(bill.getAccountId())
+                .orElseThrow(() -> new BankAccountNotFoundException(
+                        "Аккаунт не найден для счета id: " + id + ". Счет не принадлежит пользователю"));
+
+        if (!account.getId().equals(accountId)) {
+            throw new BillNotBelongAccountExeption("Счет не принадлежит аккаунту");
+        }
+
+        if (!bill.getIsActive()) {
+            bill.setIsActive(true);
+            log.info("Bill {} activated", bill.getId());
+        }
+
+        // Пополнение счета
+        BigDecimal newBalance = bill.getBalance().add(amount);
+        bill.setBalance(newBalance);
+
+        billRepository.save(bill);
+        log.info("Bill {} replenished by {}. New balance: {}", bill.getId(), amount, newBalance);
+
         return mapToResponseDTO(bill);
     }
 
