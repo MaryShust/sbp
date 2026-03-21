@@ -32,6 +32,10 @@ public class PaymentService {
     public PaymentResponseDTO processPayment(PaymentRequestDTO request) {
         log.info("Processing SBP payment: {}", request);
 
+        if (request.getMessage().trim().length() > 100) {
+            throw new MessageFormatException("Message must not exceed 100 characters");
+        }
+
 
         Bill senderBill = billRepository.findById(request.getSenderBillId())
                 .orElseThrow(() -> new BillNotFoundException("Не найден счет отправителя по id: " + request.getSenderBillId()));

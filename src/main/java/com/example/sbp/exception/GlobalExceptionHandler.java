@@ -27,7 +27,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             BankBicFormatException.class,
             PhoneNumberFormatException.class,
-            OwnerNameFormatException.class
+            OwnerNameFormatException.class,
+            MessageFormatException.class
     })
     public ResponseEntity<Map<String, String>> handleFormatException(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
