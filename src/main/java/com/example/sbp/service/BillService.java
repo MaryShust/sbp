@@ -13,7 +13,6 @@ import com.example.sbp.exception.BillNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 
 @Service
@@ -24,7 +23,6 @@ public class BillService {
     private final BillRepository billRepository;
     private final BankAccountRepository accountRepository;
 
-    @Transactional
     public BillResponseDTO createBill(BillCreateRequestDTO billDTO) {
         log.info("Creating new bill for account ID: {}", billDTO.getAccountId());
 
@@ -49,14 +47,12 @@ public class BillService {
         return mapToResponseDTO(bill);
     }
 
-    @Transactional
     public BillResponseDTO getBillById(Long id) {
         Bill bill = billRepository.findById(id)
                 .orElseThrow(() -> new BillNotFoundException("Счет не найден по id: " + id));
         return mapToResponseDTO(bill);
     }
 
-    @Transactional
     public BillResponseDTO replenishBill(Long accountId, Long billId, BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Сумма пополнения должна быть положительной");
@@ -92,7 +88,6 @@ public class BillService {
         return mapToResponseDTO(bill);
     }
 
-    @Transactional
     public BillResponseDTO getDefaultBillByAccountId(Long accountId) {
         BankAccount account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new BankAccountNotFoundException("Аккаунт не найден по id: " + accountId));

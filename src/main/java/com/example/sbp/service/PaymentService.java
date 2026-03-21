@@ -12,7 +12,6 @@ import com.example.sbp.exception.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -30,7 +29,6 @@ public class PaymentService {
     private static final BigDecimal MIN_COMMISSION = new BigDecimal("10");
     private static final BigDecimal MAX_COMMISSION = new BigDecimal("1000");
 
-    @Transactional
     public PaymentResponseDTO processPayment(PaymentRequestDTO request) {
         log.info("Processing SBP payment: {}", request);
 
@@ -196,7 +194,6 @@ public class PaymentService {
         return response;
     }
 
-    @Transactional
     public PaymentResponseDTO getTransactionStatus(String transactionId) {
         SbpTransaction transaction = transactionRepository.findByTransactionId(transactionId)
                 .orElseThrow(() -> new TransactionNotFoundException("Транзакция не найдена по id"));

@@ -37,11 +37,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             BankAccountInactiveException.class,
             BankAccountAlreadyExistsException.class,
-            BillInactiveException.class,
+            BillInactiveException.class
+    })
+    public ResponseEntity<Map<String, String>> handleConflictException(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler({
             InsufficientFundsException.class
     })
-    public ResponseEntity<Map<String, String>> handleBusinessException(RuntimeException ex) {
-        return ResponseEntity.badRequest()
+    public ResponseEntity<Map<String, String>> handlePaymentException(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED)
                 .body(Map.of("error", ex.getMessage()));
     }
 

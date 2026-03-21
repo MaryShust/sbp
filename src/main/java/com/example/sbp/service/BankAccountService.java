@@ -12,7 +12,6 @@ import com.example.sbp.exception.BankAccountNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 
@@ -24,7 +23,6 @@ public class BankAccountService {
     private final BankAccountRepository accountRepository;
     private final BillRepository billRepository;
 
-    @Transactional
     public BankAccountResponseDTO createAccount(BankAccountRequestDTO bankAccountRequestDTO) {
         log.info("Creating new account with phone: {}", bankAccountRequestDTO.getPhoneNumber());
 
@@ -63,21 +61,18 @@ public class BankAccountService {
         return mapToResponseDTO(account);
     }
 
-    @Transactional
     public BankAccountResponseDTO getAccountById(Long id) {
         BankAccount account = accountRepository.findById(id)
                 .orElseThrow(() -> new BankAccountNotFoundException("Аккаунт не найден с id: " + id));
         return mapToResponseDTO(account);
     }
 
-    @Transactional
     public BankAccountResponseDTO getAccountByPhone(String phoneNumber) {
         BankAccount account = accountRepository.findByPhoneNumber(phoneNumber)
                 .orElseThrow(() -> new BankAccountNotFoundException("Аккаунт не найден с телефоном: " + phoneNumber));
         return mapToResponseDTO(account);
     }
 
-    @Transactional
     public void activateDefaultBill(Long accountId, BigDecimal startBalance) {
         BankAccount account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new BankAccountNotFoundException("Аккаунт не найден с id: " + accountId));
