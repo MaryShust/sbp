@@ -25,6 +25,16 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({
+            BankBicFormatException.class,
+            PhoneNumberFormatException.class,
+            OwnerNameFormatException.class
+    })
+    public ResponseEntity<Map<String, String>> handleFormatException(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler({
             BankAccountNotFoundException.class,
             BillNotFoundException.class,
             TransactionNotFoundException.class

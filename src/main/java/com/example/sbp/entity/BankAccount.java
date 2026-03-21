@@ -1,6 +1,7 @@
 package com.example.sbp.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -21,13 +22,16 @@ public class BankAccount {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "phone_number", unique = true, nullable = false)
+    @Column(name = "phone_number", unique = true, nullable = false, length = 11)
+    @Size(max = 11, message = "Phone number must not exceed 11 characters")
     private String phoneNumber;
 
-    @Column(name = "owner_name", nullable = false)
+    @Column(name = "owner_name", nullable = false, length = 100)
+    @Size(max = 100, message = "Owner name must not exceed 100 characters")
     private String ownerName;
 
-    @Column(name = "bank_bic", nullable = false)
+    @Column(name = "bank_bic", nullable = false, length = 11)
+    @Size(min = 8, max = 11, message = "Bank BIC must be between 8 and 11 characters")
     private String bankBic;
 
     @Column(name = "is_active")

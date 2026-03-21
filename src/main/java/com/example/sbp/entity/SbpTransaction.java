@@ -1,6 +1,7 @@
 package com.example.sbp.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -26,13 +27,15 @@ public class SbpTransaction {
     @Column(name = "sender_bill_id", nullable = false)
     private Long senderBillId;
 
-    @Column(name = "sender_bank_bic", nullable = false)
+    @Column(name = "sender_bank_bic", nullable = false, length = 11)
+    @Size(min = 8, max = 11, message = "Bank BIC must be between 8 and 11 characters")
     private String senderBankBic;
 
     @Column(name = "receiver_bill_id", nullable = false)
     private Long receiverBillId;
 
-    @Column(name = "receiver_bank_bic", nullable = false)
+    @Column(name = "receiver_bank_bic", nullable = false, length = 11)
+    @Size(min = 8, max = 11, message = "Bank BIC must be between 8 and 11 characters")
     private String receiverBankBic;
 
     @Column(name = "amount", nullable = false)
