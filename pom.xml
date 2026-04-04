@@ -104,9 +104,9 @@
 				<artifactId>flyway-maven-plugin</artifactId>
 				<version>8.0.0</version>
 				<configuration>
-					<url>jdbc:postgresql://localhost:5432/studs</url>
-					<user>postgres</user>
-					<password>test</password>
+					<url>jdbc:postgresql://pg:5432/studs</url>
+					<user>s409923</user>
+					<password>nREdnGgZRJuHf8dm</password>
 					<baselineOnMigrate>true</baselineOnMigrate>
 					<locations>
 						<location>classpath:db/migration</location>
