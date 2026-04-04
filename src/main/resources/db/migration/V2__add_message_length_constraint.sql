@@ -9,9 +9,4 @@ WHERE LENGTH(message) > 100;
 ALTER TABLE sbp_transactions
 ALTER COLUMN message TYPE VARCHAR(100);
 
--- Добавляем constraint
-ALTER TABLE sbp_transactions
-ADD CONSTRAINT ck_sbp_transactions_message_length
-CHECK (LENGTH(message) <= 100);
-
 COMMIT;

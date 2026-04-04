@@ -58,7 +58,7 @@ public class PaymentService {
 
         // Проверять аккаунт не нужно, так как если он заблочен или на него наложен арест, то деньжата уйдут приставам
         if (!receiverBill.getIsActive()) {
-            throw new BillInactiveException("Счет отправителя не активен");
+            throw new BillInactiveException("Счет получателя не активен");
         }
 
 
