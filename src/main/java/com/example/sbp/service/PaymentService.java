@@ -32,8 +32,8 @@ public class PaymentService {
     public PaymentResponseDTO processPayment(PaymentRequestDTO request) {
         log.info("Processing SBP payment: {}", request);
 
-        if (request.getMessage().trim().length() > 100) {
-            throw new MessageFormatException("Message must not exceed 100 characters");
+        if (request.getMessage().trim().length() > 70) {
+            throw new MessageFormatException("Message must not exceed 70 characters");
         }
 
 
