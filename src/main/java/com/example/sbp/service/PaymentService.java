@@ -9,6 +9,7 @@ import com.example.sbp.repository.BankAccountRepository;
 import com.example.sbp.repository.BillRepository;
 import com.example.sbp.repository.SbpTransactionRepository;
 import com.example.sbp.exception.*;
+import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,8 +33,8 @@ public class PaymentService {
     public PaymentResponseDTO processPayment(PaymentRequestDTO request) {
         log.info("Processing SBP payment: {}", request);
 
-        if (request.getMessage().trim().length() > 70) {
-            throw new MessageFormatException("Message must not exceed 70 characters");
+        if (request.getMessage().trim().length() > 100) {
+            throw new MessageFormatException("Message must not exceed 100 characters");
         }
 
 
@@ -80,7 +81,7 @@ public class PaymentService {
             throw new InsufficientFundsException("Недостаточно средств на счете отправителя");
         }
 
-
+        log.info("TEST MY CODE");
         SbpTransaction transaction = createTransaction(
                 senderBill,
                 receiverBill,
@@ -89,6 +90,7 @@ public class PaymentService {
                 request,
                 commission
         );
+        log.info("TEST MY CODE 2");
 
 
         updateBalances(senderBill, receiverBill, request.getAmount(), commission);
@@ -152,6 +154,7 @@ public class PaymentService {
             PaymentRequestDTO request,
             BigDecimal commission
     ) {
+        log.info("TEST MY CODE 3");
         SbpTransaction transaction = SbpTransaction.builder()
                 .senderBillId(senderBill.getId())
                 .senderBankBic(senderBankBic)
@@ -162,7 +165,7 @@ public class PaymentService {
                 .status(SbpTransaction.TransactionStatus.PENDING)
                 .message(request.getMessage())
                 .build();
-
+        log.info("TEST MY CODE 4");
         return transactionRepository.save(transaction);
     }
 

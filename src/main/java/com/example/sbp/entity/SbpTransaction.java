@@ -48,8 +48,8 @@ public class SbpTransaction {
     @Enumerated(EnumType.STRING)
     private TransactionStatus status;
 
-    @Column(name = "message", length = 70)  // Добавлено ограничение длины
-    @Size(max = 70, message = "Message must not exceed 70 characters")  // Валидация
+    @Column(name = "message", length = 100)  // Добавлено ограничение длины
+    @Size(min = 5, max = 100, message = "Message must not exceed 100 characters")  // Валидация
     private String message;
 
     @Column(name = "created_at")
@@ -65,8 +65,8 @@ public class SbpTransaction {
         status = TransactionStatus.PENDING;
 
         // Обрезаем сообщение если оно превышает 70 символов
-        if (message != null && message.length() > 70) {
-            message = message.substring(0, 70);
+        if (message != null && message.length() > 100) {
+            message = message.substring(0, 100);
         }
     }
 
