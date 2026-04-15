@@ -29,7 +29,7 @@ public class PaymentController {
     @PostMapping("/sbp")
     @Operation(
             summary = "Выполнить перевод по СБП",
-            description = "Осуществляет перевод средств между счетами"
+            description = "Осуществляет перевод средств между счетами. USER - только со своих счетов."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Перевод успешно выполнен",
@@ -57,7 +57,7 @@ public class PaymentController {
     @GetMapping("/{transactionId}/status")
     @Operation(
             summary = "Получить статус транзакции",
-            description = "Возвращает информацию о транзакции по её ID"
+            description = "Возвращает информацию о транзакции по её ID. USER - только если участвует в транзакции, MANAGER - все."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Транзакция найдена",
@@ -75,7 +75,7 @@ public class PaymentController {
     @GetMapping("/health")
     @Operation(
             summary = "Проверка работоспособности",
-            description = "Проверяет, что сервис работает"
+            description = "Проверяет, что сервис работает. Доступен без аутентификации."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Сервис работает",

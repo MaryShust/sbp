@@ -2,10 +2,13 @@ package com.example.sbp.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import javax.security.auth.login.LoginException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,6 +39,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({
+            UsernameNotFoundException.class,
             BankAccountNotFoundException.class,
             BillNotFoundException.class,
             TransactionNotFoundException.class
@@ -48,6 +52,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             BankAccountInactiveException.class,
             BankAccountAlreadyExistsException.class,
+            UserAlreadyExistsException.class,
             BillInactiveException.class
     })
     public ResponseEntity<Map<String, String>> handleConflictException(RuntimeException ex) {
@@ -63,7 +68,27 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", ex.getMessage()));
     }
 
-    @ExceptionHandler(Exception.class)
+    @ExceptionHandler({
+            BadCredentialsException.class,
+            LoginException.class
+    })
+    public ResponseEntity<Map<String, String>> handleAuthException(Exception ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler({
+            AccessDeniedException.class
+    })
+    public ResponseEntity<Map<String, String>> handleAccessDeniedException(Exception ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler({
+            FileParseException.class,
+            Exception.class,
+    })
     public ResponseEntity<Map<String, String>> handleGeneralException(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Internal server error", "message", ex.getMessage()));

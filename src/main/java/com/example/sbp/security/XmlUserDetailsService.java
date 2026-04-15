@@ -1,0 +1,266 @@
+package com.example.sbp.security;
+
+import com.example.sbp.exception.FileParseException;
+import com.example.sbp.exception.UserAlreadyExistsException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.File;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Service
+public class XmlUserDetailsService implements UserDetailsService {
+
+    @Value("${users.xml.path:users.xml}")
+    private String xmlPath;
+
+    private final PasswordEncoder passwordEncoder;
+
+    public XmlUserDetailsService(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        Document document = loadDocument();
+        Element userElement = findUserElement(document, username);
+
+        if (userElement == null) {
+            log.info("User not found, creating new user: {} with USER role", username);
+            userElement = createNewUser(document, username, null, null);
+        }
+
+        return buildUserDetails(userElement);
+    }
+
+    public synchronized void createUserWithPhone(String username, String rawPassword, String phoneNumber) {
+        Document document = loadDocument();
+        if (findUserElement(document, username) != null) {
+            log.warn("User already exists: {}", username);
+            throw new UserAlreadyExistsException("User already exists");
+        }
+        if (phoneNumber != null && !phoneNumber.isBlank() && findUserElementByPhone(document, phoneNumber) != null) {
+            log.warn("Phone number already in use: {}", phoneNumber);
+            throw new UserAlreadyExistsException("Phone number already in use");
+        }
+        createNewUser(document, username, rawPassword, phoneNumber);
+        saveDocument(document);
+        log.info("Created new user: {} with phone: {}", username, phoneNumber);
+    }
+
+    public synchronized void updateUserRoles(String username, Set<Role> newRoles) {
+        Document document = loadDocument();
+        Element userElement = findUserElement(document, username);
+        if (userElement == null) {
+            throw new UsernameNotFoundException("User not found: " + username);
+        }
+        String rolesStr = newRoles.stream().map(Role::name).collect(Collectors.joining(","));
+        userElement.setAttribute("roles", rolesStr);
+        // Increment token version to invalidate old tokens
+        incrementTokenVersion(userElement);
+        saveDocument(document);
+        log.info("Updated roles for user {}: {}", username, newRoles);
+    }
+
+    public synchronized void updateUserAccountIdByPhone(String phoneNumber, Long accountId) {
+        Document document = loadDocument();
+        Element userElement = findUserElementByPhone(document, phoneNumber);
+        if (userElement == null) {
+            log.info("No user found with phone: {}, skipping accountId assignment", phoneNumber);
+            return;
+        }
+        userElement.setAttribute("accountId", accountId != null ? accountId.toString() : "");
+        // Increment token version to invalidate old tokens
+        incrementTokenVersion(userElement);
+        saveDocument(document);
+        log.info("Updated accountId for user with phone {}: {}", phoneNumber, accountId);
+    }
+
+    public synchronized int incrementTokenVersion(String username) {
+        Document document = loadDocument();
+        Element userElement = findUserElement(document, username);
+        if (userElement == null) {
+            throw new UsernameNotFoundException("User not found: " + username);
+        }
+        int newVersion = incrementTokenVersion(userElement);
+        saveDocument(document);
+        log.info("Incremented token version for user {}: {}", username, newVersion);
+        return newVersion;
+    }
+
+    public int getTokenVersion(String username) {
+        try {
+            Document document = loadDocument();
+            Element userElement = findUserElement(document, username);
+            if (userElement == null) {
+                return 0;
+            }
+            String versionStr = userElement.getAttribute("tokenVersion");
+            return !versionStr.isBlank() ? Integer.parseInt(versionStr) : 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public boolean userExists(String username) {
+        try {
+            Document document = loadDocument();
+            return findUserElement(document, username) != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public CustomUserDetails getUser(String username) {
+        Document document = loadDocument();
+        Element userElement = findUserElement(document, username);
+        if (userElement == null) {
+            throw new UsernameNotFoundException("User not found: " + username);
+        }
+        return buildUserDetails(userElement);
+    }
+
+    private CustomUserDetails buildUserDetails(Element userElement) {
+        String username = userElement.getAttribute("username");
+        String password = userElement.getAttribute("password");
+        String rolesStr = userElement.getAttribute("roles");
+
+        String accountIdStr = userElement.getAttribute("accountId");
+        Long accountId = !accountIdStr.isBlank() ? Long.parseLong(accountIdStr) : null;
+
+        String phoneNumber = userElement.getAttribute("phoneNumber");
+        if (phoneNumber.isBlank()) {
+            phoneNumber = null;
+        }
+
+        String versionStr = userElement.getAttribute("tokenVersion");
+        int tokenVersion = !versionStr.isBlank() ? Integer.parseInt(versionStr) : 0;
+
+        Set<Role> roles = parseRoles(rolesStr);
+        Set<Privilege> privileges = collectPrivileges(roles);
+
+        return new CustomUserDetails(username, password, roles, privileges, accountId, phoneNumber, tokenVersion);
+    }
+
+    private Document loadDocument() {
+        try {
+            File file = new File(xmlPath);
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            if (!file.exists()) {
+                Document doc = builder.newDocument();
+                doc.appendChild(doc.createElement("users"));
+                return doc;
+            }
+            return builder.parse(file);
+        } catch (Exception e) {
+            throw new FileParseException("Load document fail");
+        }
+    }
+
+    private void saveDocument(Document document)  {
+        try {
+            File file = new File(xmlPath);
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "no");
+            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            transformer.transform(new DOMSource(document), new StreamResult(file));
+        } catch (Exception e) {
+            throw new FileParseException("Save to document fail");
+        }
+    }
+
+    private Element findUserElement(Document document, String username) {
+        if (username == null || username.isBlank()) {
+            return null;
+        }
+        NodeList users = document.getElementsByTagName("user");
+        for (int i = 0; i < users.getLength(); i++) {
+            Element userElement = (Element) users.item(i);
+            if (username.equals(userElement.getAttribute("username"))) {
+                return userElement;
+            }
+        }
+        return null;
+    }
+
+    private Element findUserElementByPhone(Document document, String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.isBlank()) {
+            return null;
+        }
+        NodeList users = document.getElementsByTagName("user");
+        for (int i = 0; i < users.getLength(); i++) {
+            Element userElement = (Element) users.item(i);
+            if (phoneNumber.equals(userElement.getAttribute("phoneNumber"))) {
+                return userElement;
+            }
+        }
+        return null;
+    }
+
+    private Element createNewUser(Document document, String username, String rawPassword, String phoneNumber) {
+        String encodedPassword = rawPassword != null && !rawPassword.isEmpty()
+                ? "{bcrypt}" + passwordEncoder.encode(rawPassword)
+                : "{bcrypt}" + passwordEncoder.encode(java.util.UUID.randomUUID().toString());
+
+        Element userElement = document.createElement("user");
+        userElement.setAttribute("username", username);
+        userElement.setAttribute("password", encodedPassword);
+        userElement.setAttribute("roles", "USER");
+        if (phoneNumber != null && !phoneNumber.isBlank()) {
+            userElement.setAttribute("phoneNumber", phoneNumber);
+        }
+        userElement.setAttribute("accountId", "");
+        userElement.setAttribute("tokenVersion", "0");
+
+        // Add indentation and newline before new user element
+        Element root = document.getDocumentElement();
+        root.appendChild(document.createTextNode("\n    "));
+        root.appendChild(userElement);
+
+        saveDocument(document);
+        return userElement;
+    }
+
+    private int incrementTokenVersion(Element userElement) {
+        String versionStr = userElement.getAttribute("tokenVersion");
+        int currentVersion = !versionStr.isBlank() ? Integer.parseInt(versionStr) : 0;
+        int newVersion = currentVersion + 1;
+        userElement.setAttribute("tokenVersion", String.valueOf(newVersion));
+        return newVersion;
+    }
+
+    private Set<Role> parseRoles(String rolesStr) {
+        if (rolesStr == null || rolesStr.isBlank()) return Set.of(Role.USER);
+        return Arrays.stream(rolesStr.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(Role::fromString)
+                .collect(Collectors.toSet());
+    }
+
+    private Set<Privilege> collectPrivileges(Set<Role> roles) {
+        Set<Privilege> privileges = new HashSet<>();
+        roles.forEach(role -> privileges.addAll(role.getPrivileges()));
+        return privileges;
+    }
+}

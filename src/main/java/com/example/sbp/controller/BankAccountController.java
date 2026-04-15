@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -28,9 +29,10 @@ public class BankAccountController {
     private final BankAccountService bankAccountService;
 
     @PostMapping
+    @PreAuthorize("hasRole('MANAGER') and hasAuthority('ACCOUNT_CREATE')")
     @Operation(
             summary = "Создание нового аккаунта",
-            description = "Создает новый аккаунт и дефолтный счет (неактивный)"
+            description = "Создает новый аккаунт и дефолтный счет (неактивный). Только для MANAGER в офисе банка."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Аккаунт успешно создан",
@@ -60,7 +62,7 @@ public class BankAccountController {
     @GetMapping("/{id}")
     @Operation(
             summary = "Получить аккаунт по ID",
-            description = "Возвращает информацию об аккаунте по его ID"
+            description = "Возвращает информацию об аккаунте по его ID. USER - только свой аккаунт, MANAGER - любой."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Аккаунт найден",
@@ -78,7 +80,7 @@ public class BankAccountController {
     @GetMapping("/phone/{phoneNumber}")
     @Operation(
             summary = "Получить аккаунт по номеру телефона",
-            description = "Возвращает информацию об аккаунте по номеру телефона"
+            description = "Возвращает информацию об аккаунте по номеру телефона. USER - только свой аккаунт, MANAGER - любой."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Аккаунт найден",
@@ -96,7 +98,7 @@ public class BankAccountController {
     @PostMapping("/{accountId}/activate-default")
     @Operation(
             summary = "Активировать дефолтный счет",
-            description = "Пополняет и активирует дефолтный счет аккаунта"
+            description = "Пополняет и активирует дефолтный счет аккаунта. USER - только свой аккаунт."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Счет успешно активирован",

@@ -9,10 +9,11 @@ import com.example.sbp.repository.BankAccountRepository;
 import com.example.sbp.repository.BillRepository;
 import com.example.sbp.repository.SbpTransactionRepository;
 import com.example.sbp.exception.*;
-import jakarta.validation.ConstraintViolationException;
+import com.example.sbp.security.SecurityService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -23,6 +24,7 @@ import java.util.Optional;
 @Slf4j
 public class PaymentService {
 
+    private final SecurityService securityService;
     private final BillRepository billRepository;
     private final BankAccountRepository accountRepository;
     private final SbpTransactionRepository transactionRepository;
@@ -30,8 +32,10 @@ public class PaymentService {
     private static final BigDecimal MIN_COMMISSION = new BigDecimal("10");
     private static final BigDecimal MAX_COMMISSION = new BigDecimal("1000");
 
+    @Transactional
     public PaymentResponseDTO processPayment(PaymentRequestDTO request) {
         log.info("Processing SBP payment: {}", request);
+        securityService.checkPrivilegeCreatePayment(request.getSenderBillId());
 
         if (request.getMessage().trim().length() > 100) {
             throw new MessageFormatException("Message must not exceed 100 characters");
@@ -202,6 +206,8 @@ public class PaymentService {
     }
 
     public PaymentResponseDTO getTransactionStatus(String transactionId) {
+        securityService.checkPrivilegeReadPaymentStatus(transactionId);
+
         SbpTransaction transaction = transactionRepository.findByTransactionId(transactionId)
                 .orElseThrow(() -> new TransactionNotFoundException("Транзакция не найдена по id"));
 

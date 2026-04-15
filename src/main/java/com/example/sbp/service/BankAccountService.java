@@ -7,9 +7,12 @@ import com.example.sbp.entity.Bill;
 import com.example.sbp.exception.*;
 import com.example.sbp.repository.BankAccountRepository;
 import com.example.sbp.repository.BillRepository;
+import com.example.sbp.security.SecurityService;
+import com.example.sbp.security.XmlUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 
@@ -20,7 +23,10 @@ public class BankAccountService {
 
     private final BankAccountRepository accountRepository;
     private final BillRepository billRepository;
+    private final XmlUserDetailsService userDetailsService;
+    private final SecurityService securityService;
 
+    @Transactional
     public BankAccountResponseDTO createAccount(BankAccountRequestDTO bankAccountRequestDTO) {
         log.info("Creating new account with phone: {}", bankAccountRequestDTO.getPhoneNumber());
 
@@ -60,10 +66,16 @@ public class BankAccountService {
         account.getAllBillIds().add(defaultBill.getId());
         account = accountRepository.save(account);
 
+        // Link account to user by phone number
+        userDetailsService.updateUserAccountIdByPhone(account.getPhoneNumber(), account.getId());
+        log.info("Linked account {} to user with phone {}", account.getId(), account.getPhoneNumber());
+
         return mapToResponseDTO(account);
     }
 
     public BankAccountResponseDTO getAccountById(Long id) {
+        securityService.checkPrivilegeReadAccount(id);
+
         BankAccount account = accountRepository.findById(id)
                 .orElseThrow(() -> new BankAccountNotFoundException("Аккаунт не найден с id: " + id));
         return mapToResponseDTO(account);
@@ -72,10 +84,16 @@ public class BankAccountService {
     public BankAccountResponseDTO getAccountByPhone(String phoneNumber) {
         BankAccount account = accountRepository.findByPhoneNumber(phoneNumber)
                 .orElseThrow(() -> new BankAccountNotFoundException("Аккаунт не найден с телефоном: " + phoneNumber));
+
+        securityService.checkPrivilegeReadAccount(account.getId());
+
         return mapToResponseDTO(account);
     }
 
+    @Transactional
     public void activateDefaultBill(Long accountId, BigDecimal startBalance) {
+        securityService.checkPrivilegeActivateAccount(accountId);
+
         BankAccount account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new BankAccountNotFoundException("Аккаунт не найден с id: " + accountId));
 
@@ -105,7 +123,7 @@ public class BankAccountService {
         return dto;
     }
 
-    public void validateOwnerName(String ownerName) {
+    private void validateOwnerName(String ownerName) {
         if (ownerName == null || ownerName.isBlank()) {
             throw new OwnerNameFormatException("Owner name cannot be empty");
         }
@@ -120,7 +138,7 @@ public class BankAccountService {
         }
     }
 
-    public void validatePhoneNumber(String phoneNumber) {
+    private void validatePhoneNumber(String phoneNumber) {
         if (phoneNumber == null || phoneNumber.isBlank()) {
             throw new PhoneNumberFormatException("Phone number cannot be empty");
         }
@@ -142,7 +160,7 @@ public class BankAccountService {
         }
     }
 
-    public void validateBankBic(String bankBic) {
+    private void validateBankBic(String bankBic) {
         if (bankBic == null || bankBic.isBlank()) {
             throw new BankBicFormatException("Bank BIC cannot be empty");
         }

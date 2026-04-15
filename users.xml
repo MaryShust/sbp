@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><users>
+    <user accountId="" password="{bcrypt}$2a$10$HZo7FkK.2emlQpsg5w1ck.FRUYuNty0QyjW.4MSPdXDtgxWKFNhZi" phoneNumber="" roles="ADMIN" tokenVersion="0" username="admin"/>
+</users>

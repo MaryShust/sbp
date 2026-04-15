@@ -10,9 +10,11 @@ import com.example.sbp.repository.BankAccountRepository;
 import com.example.sbp.repository.BillRepository;
 import com.example.sbp.exception.BankAccountNotFoundException;
 import com.example.sbp.exception.BillNotFoundException;
+import com.example.sbp.security.SecurityService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 
 @Service
@@ -22,8 +24,13 @@ public class BillService {
 
     private final BillRepository billRepository;
     private final BankAccountRepository accountRepository;
+    private final SecurityService securityService;
 
+    @Transactional
     public BillResponseDTO createBill(BillCreateRequestDTO billDTO) {
+
+        securityService.checkPrivilegeCreateBill(billDTO.getAccountId());
+
         log.info("Creating new bill for account ID: {}", billDTO.getAccountId());
 
         // Проверка на наличие аккаунта
@@ -48,12 +55,18 @@ public class BillService {
     }
 
     public BillResponseDTO getBillById(Long id) {
+        securityService.checkPrivilegeReadBill(id);
+
         Bill bill = billRepository.findById(id)
                 .orElseThrow(() -> new BillNotFoundException("Счет не найден по id: " + id));
         return mapToResponseDTO(bill);
     }
 
+    @Transactional
     public BillResponseDTO replenishBill(Long accountId, Long billId, BigDecimal amount) {
+
+        securityService.checkPrivilegeReplenishBill(billId);
+
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Сумма пополнения должна быть положительной");
         }
@@ -89,11 +102,16 @@ public class BillService {
     }
 
     public BillResponseDTO getDefaultBillByAccountId(Long accountId) {
+
+        securityService.checkPrivilegeReadAccount(accountId);
+
         BankAccount account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new BankAccountNotFoundException("Аккаунт не найден по id: " + accountId));
 
         Bill bill = billRepository.findById(account.getDefaultBillId())
                 .orElseThrow(() -> new BillNotFoundException("Счет не найден по id: " + account.getDefaultBillId()));
+
+        securityService.checkPrivilegeReadBill(bill.getId());
 
         return mapToResponseDTO(bill);
     }

@@ -15,7 +15,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +30,7 @@ public class BillController {
     @PostMapping
     @Operation(
             summary = "Создание нового счета",
-            description = "Создает новый дополнительный счет (активный сразу)"
+            description = "Создает новый дополнительный счет (активный сразу). USER - только для своего аккаунта."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Счет успешно создан",
@@ -59,7 +58,7 @@ public class BillController {
     @GetMapping("/{id}")
     @Operation(
             summary = "Получить счет по ID",
-            description = "Возвращает информацию о счете по его ID"
+            description = "Возвращает информацию о счете по его ID. USER - только свои счета, MANAGER - все счета."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Счет найден",
@@ -76,7 +75,7 @@ public class BillController {
     @PostMapping("/{id}/replenish")
     @Operation(
             summary = "Пополнить счет",
-            description = "Пополняет счет на указанную сумму"
+            description = "Пополняет счет на указанную сумму. USER - только свои счета."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Счет успешно пополнен",
@@ -100,7 +99,7 @@ public class BillController {
     @GetMapping("/account/{accountId}/default")
     @Operation(
             summary = "Получить дефолтный счет аккаунта",
-            description = "Возвращает дефолтный счет для указанного аккаунта"
+            description = "Возвращает дефолтный счет для указанного аккаунта. USER - только свои счета, MANAGER - все счета."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Дефолтный счет найден",
