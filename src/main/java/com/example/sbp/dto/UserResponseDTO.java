@@ -1,6 +1,5 @@
 package com.example.sbp.dto;
 
-import com.example.sbp.security.Role;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,5 +15,5 @@ public class UserResponseDTO {
     private String username;
 
     @Schema(description = "Роль пользователя", example = "USER")
-    private Role role;
+    private String role;
 }

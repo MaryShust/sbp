@@ -39,7 +39,7 @@ public class JwtTokenProvider {
             throw new BadCredentialsException("ошибка генерации токена");
         }
 
-        String role = userDetails.getRole().name();
+        String role = userDetails.getRole();
 
         String privileges = userDetails.getPrivileges().stream()
                 .map(Privilege::name)
@@ -73,14 +73,14 @@ public class JwtTokenProvider {
                 .getSubject();
     }
 
-    public Role getRoleFromToken(String token) {
+    public String getRoleFromToken(String token) {
         String role = Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
                 .get("role", String.class);
-        return Role.fromString(role);
+        return role;
     }
 
     public List<String> getPrivilegesFromToken(String token) {

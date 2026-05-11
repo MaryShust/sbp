@@ -18,8 +18,4 @@ public class Privilege {
 
     @Column(unique = true, nullable = false, length = 50)
     private String name;
-
-    public Privilege(String name) {
-        this.name = name;
-    }
 }

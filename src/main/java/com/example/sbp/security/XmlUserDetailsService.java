@@ -154,7 +154,7 @@ public class XmlUserDetailsService implements UserDetailsService {
         String versionStr = userElement.getAttribute("tokenVersion");
         int tokenVersion = !versionStr.isBlank() ? Integer.parseInt(versionStr) : 0;
 
-        Role role = parseRole(rolesStr);
+        String role = parseRole(rolesStr);
         Set<Privilege> privileges = collectPrivilegesFromDb(role);
 
         return new CustomUserDetails(username, password, role, privileges, accountId, phoneNumber, tokenVersion);
@@ -248,14 +248,14 @@ public class XmlUserDetailsService implements UserDetailsService {
         return newVersion;
     }
 
-    private Role parseRole(String rolesStr) {
-        if (rolesStr == null || rolesStr.isBlank()) return Role.USER;
-        return Role.fromString(rolesStr);
+    private String parseRole(String rolesStr) {
+        if (rolesStr == null || rolesStr.isBlank()) return "USER";
+        return rolesStr;
     }
 
-    private Set<Privilege> collectPrivilegesFromDb(Role role) {
+    private Set<Privilege> collectPrivilegesFromDb(String role) {
         Set<Privilege> privileges = new HashSet<>();
-        com.example.sbp.entity.Role roleEntity = roleRepository.findByName(role.name()).orElse(null);
+        com.example.sbp.entity.Role roleEntity = roleRepository.findByName(role).orElse(null);
         if (roleEntity != null) {
             for (com.example.sbp.entity.Privilege priv : roleEntity.getPrivileges()) {
                 try {
