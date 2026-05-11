@@ -66,18 +66,16 @@ public class XmlUserDetailsService implements UserDetailsService {
         log.info("Created new user: {} with phone: {}", username, phoneNumber);
     }
 
-    public synchronized void updateUserRoles(String username, Set<Role> newRoles) {
+    public synchronized void updateUserRole(String username, String newRoleName) {
         Document document = loadDocument();
         Element userElement = findUserElement(document, username);
         if (userElement == null) {
             throw new UsernameNotFoundException("User not found: " + username);
         }
-        String rolesStr = newRoles.stream().map(Role::name).collect(Collectors.joining(","));
-        userElement.setAttribute("roles", rolesStr);
-        // Increment token version to invalidate old tokens
+        userElement.setAttribute("roles", newRoleName);
         incrementTokenVersion(userElement);
         saveDocument(document);
-        log.info("Updated roles for user {}: {}", username, newRoles);
+        log.info("Updated roles for user {}: {}", username, newRoleName);
     }
 
     public synchronized void updateUserAccountIdByPhone(String phoneNumber, Long accountId) {
@@ -88,7 +86,6 @@ public class XmlUserDetailsService implements UserDetailsService {
             return;
         }
         userElement.setAttribute("accountId", accountId != null ? accountId.toString() : "");
-        // Increment token version to invalidate old tokens
         incrementTokenVersion(userElement);
         saveDocument(document);
         log.info("Updated accountId for user with phone {}: {}", phoneNumber, accountId);
@@ -157,7 +154,7 @@ public class XmlUserDetailsService implements UserDetailsService {
         Set<Role> roles = parseRoles(rolesStr);
         Set<Privilege> privileges = collectPrivileges(roles);
 
-        return new CustomUserDetails(username, password, roles, privileges, accountId, phoneNumber, tokenVersion);
+        return new CustomUserDetails(username, password, role, privileges, accountId, phoneNumber, tokenVersion);
     }
 
     private Document loadDocument() {
@@ -232,7 +229,6 @@ public class XmlUserDetailsService implements UserDetailsService {
         userElement.setAttribute("accountId", "");
         userElement.setAttribute("tokenVersion", "0");
 
-        // Add indentation and newline before new user element
         Element root = document.getDocumentElement();
         root.appendChild(document.createTextNode("\n    "));
         root.appendChild(userElement);
@@ -249,13 +245,9 @@ public class XmlUserDetailsService implements UserDetailsService {
         return newVersion;
     }
 
-    private Set<Role> parseRoles(String rolesStr) {
-        if (rolesStr == null || rolesStr.isBlank()) return Set.of(Role.USER);
-        return Arrays.stream(rolesStr.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .map(Role::fromString)
-                .collect(Collectors.toSet());
+    private Role parseRole(String rolesStr) {
+        if (rolesStr == null || rolesStr.isBlank()) return Role.USER;
+        return Role.fromString(rolesStr);
     }
 
     private Set<Privilege> collectPrivileges(Set<Role> roles) {

@@ -3,7 +3,6 @@ package com.example.sbp.service;
 import com.example.sbp.dto.UserResponseDTO;
 import com.example.sbp.security.CustomUserDetails;
 import com.example.sbp.security.JwtTokenProvider;
-import com.example.sbp.security.Role;
 import com.example.sbp.security.XmlUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +12,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -29,10 +27,8 @@ public class AuthService {
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(username, password);
         authenticationManager.authenticate(authToken);
 
-        // Increment token version to invalidate old tokens
         userDetailsService.incrementTokenVersion(username);
 
-        // Reload user with updated data
         CustomUserDetails userDetails = userDetailsService.getUser(username);
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities()
@@ -47,7 +43,6 @@ public class AuthService {
     public String register(String username, String password, String phoneNumber) {
         userDetailsService.createUserWithPhone(username, password, phoneNumber);
 
-        // Load user and generate token
         CustomUserDetails userDetails = userDetailsService.getUser(username);
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities()
@@ -60,14 +55,14 @@ public class AuthService {
 
     public UserResponseDTO getUser(String username) {
         CustomUserDetails user = userDetailsService.getUser(username);
-        return new UserResponseDTO(user.getUsername(), user.getRoles());
+        return new UserResponseDTO(user.getUsername(), user.getRole());
     }
 
     @Transactional
-    public UserResponseDTO updateUserRoles(String username, Set<Role> roles) {
-        userDetailsService.updateUserRoles(username, roles);
+    public UserResponseDTO updateUserRole(String username, String role) {
+        userDetailsService.updateUserRole(username, role);
         CustomUserDetails user = userDetailsService.getUser(username);
-        return new UserResponseDTO(user.getUsername(), user.getRoles());
+        return new UserResponseDTO(user.getUsername(), user.getRole());
     }
 
     @Transactional

@@ -39,9 +39,7 @@ public class JwtTokenProvider {
             throw new BadCredentialsException("ошибка генерации токена");
         }
 
-        String roles = userDetails.getRoles().stream()
-                .map(Role::name)
-                .collect(Collectors.joining(","));
+        String role = userDetails.getRole().name();
 
         String privileges = userDetails.getPrivileges().stream()
                 .map(Privilege::name)
@@ -49,7 +47,7 @@ public class JwtTokenProvider {
 
         var builder = Jwts.builder()
                 .subject(userDetails.getUsername())
-                .claim("roles", roles)
+                .claim("role", role)
                 .claim("privileges", privileges)
                 .claim("tokenVersion", userDetails.getTokenVersion())
                 .issuedAt(now)
@@ -75,14 +73,14 @@ public class JwtTokenProvider {
                 .getSubject();
     }
 
-    public List<String> getRolesFromToken(String token) {
-        String rolesStr = Jwts.parser()
+    public Role getRoleFromToken(String token) {
+        String role = Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
-                .get("roles", String.class);
-        return rolesStr == null || rolesStr.isEmpty() ? List.of() : List.of(rolesStr.split(","));
+                .get("role", String.class);
+        return Role.fromString(role);
     }
 
     public List<String> getPrivilegesFromToken(String token) {

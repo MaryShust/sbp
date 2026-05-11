@@ -12,17 +12,17 @@ import java.util.Set;
 public class CustomUserDetails implements UserDetails {
     private final String username;
     private final String password;
-    private final Set<Role> roles;
+    private final Role role;
     private final Set<Privilege> privileges;
     private final Long accountId;
     private final String phoneNumber;
     private final int tokenVersion;
 
-    public CustomUserDetails(String username, String password, Set<Role> roles, Set<Privilege> privileges,
+    public CustomUserDetails(String username, String password, Role role, Set<Privilege> privileges,
                              Long accountId, String phoneNumber, int tokenVersion) {
         this.username = username;
         this.password = password;
-        this.roles = roles;
+        this.role = role;
         this.privileges = privileges;
         this.accountId = accountId;
         this.phoneNumber = phoneNumber;
