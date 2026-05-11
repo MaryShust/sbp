@@ -2,7 +2,7 @@ package com.example.sbp.controller;
 
 import com.example.sbp.dto.LoginRequestDTO;
 import com.example.sbp.dto.RegisterRequestDTO;
-import com.example.sbp.dto.UpdateRolesRequestDTO;
+import com.example.sbp.dto.UpdateRoleRequestDTO;
 import com.example.sbp.dto.UserResponseDTO;
 import com.example.sbp.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
