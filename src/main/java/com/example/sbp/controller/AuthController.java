@@ -44,7 +44,7 @@ public class AuthController {
     }
 
     @GetMapping("/users/{username}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('USER_MANAGE_ROLES')")
+    @PreAuthorize("hasAuthority('USER_MANAGE_ROLES')")
     @Operation(summary = "Получить информацию по пользователю", description = "Возвращает информацию по имени (только у админа)")
     public ResponseEntity<UserResponseDTO> getUser(@PathVariable String username) {
         UserResponseDTO user = authService.getUser(username);
@@ -52,10 +52,10 @@ public class AuthController {
     }
 
     @PutMapping("/users/roles")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('USER_MANAGE_ROLES')")
-    @Operation(summary = "Обновляет роли пользователей", description = "Обновляет роли для конкретного пользователя. Все токены пользователя становятся недействительными.")
-    public ResponseEntity<UserResponseDTO> updateUserRoles(@Valid @RequestBody UpdateRolesRequestDTO request) {
-        UserResponseDTO user = authService.updateUserRoles(request.getUsername(), request.getRoles());
+    @PreAuthorize("hasAuthority('USER_MANAGE_ROLES')")
+    @Operation(summary = "Обновляет роль пользователя", description = "Обновляет роль для конкретного пользователя. Все токены пользователя становятся недействительными.")
+    public ResponseEntity<UserResponseDTO> updateUserRoles(@Valid @RequestBody UpdateRoleRequestDTO request) {
+        UserResponseDTO user = authService.updateUserRole(request.getUsername(), request.getRole());
         return ResponseEntity.ok(user);
     }
 

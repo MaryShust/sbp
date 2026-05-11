@@ -32,16 +32,11 @@ public class CustomUserDetails implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         var authorities = new ArrayList<GrantedAuthority>();
-        roles.forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role.name())));
         privileges.forEach(privilege -> authorities.add(new SimpleGrantedAuthority(privilege.name())));
         return authorities;
     }
 
     public boolean hasPrivilege(Privilege privilege) {
         return privileges.contains(privilege);
-    }
-
-    public boolean hasRole(Role role) {
-        return roles.contains(role);
     }
 }

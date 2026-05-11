@@ -2,43 +2,34 @@ package com.example.sbp.security;
 
 import lombok.Getter;
 import java.util.Arrays;
-import java.util.Set;
 
 @Getter
 public enum Role {
-//    "Пользователь"
-    USER(Set.of(
-            Privilege.ACCOUNT_READ,
-            Privilege.ACCOUNT_READ_BY_PHONE,
-            Privilege.ACCOUNT_ACTIVATE,
-            Privilege.BILL_CREATE,
-            Privilege.BILL_READ,
-            Privilege.BILL_READ_DEFAULT,
-            Privilege.BILL_REPLENISH,
-            Privilege.PAYMENT_CREATE,
-            Privilege.PAYMENT_READ_STATUS
-    )),
+    /*
+     * Privilege.ACCOUNT_READ,
+     * Privilege.ACCOUNT_READ_BY_PHONE,
+     * Privilege.ACCOUNT_ACTIVATE,
+     * Privilege.BILL_CREATE,
+     * Privilege.BILL_READ,
+     * Privilege.BILL_READ_DEFAULT,
+     * Privilege.BILL_REPLENISH,
+     * Privilege.PAYMENT_CREATE,
+     * Privilege.PAYMENT_READ_STATUS
+     */
+    USER,
 
-//    "Менеджер"
-    MANAGER(Set.of(
-            Privilege.ACCOUNT_CREATE,
-            Privilege.ACCOUNT_READ,
-            Privilege.ACCOUNT_READ_BY_PHONE,
-            Privilege.BILL_READ,
-            Privilege.BILL_READ_DEFAULT,
-            Privilege.PAYMENT_READ_STATUS
-    )),
+    /*
+     * Privilege.ACCOUNT_CREATE,
+     * Privilege.ACCOUNT_SUPER_READ,
+     * Privilege.BILL_SUPER_READ,
+     * Privilege.PAYMENT_SUPER_READ_STATUS
+     */
+    MANAGER,
 
-//    "Администратор", имеет права только на управление ролями, доступ ко всем персональны данным пользователей запрещен
-    ADMIN(Set.of(
-            Privilege.USER_MANAGE_ROLES
-    ));
-
-    private final Set<Privilege> privileges;
-
-    Role(Set<Privilege> privileges) {
-        this.privileges = privileges;
-    }
+    /*
+     * Privilege.USER_MANAGE_ROLES
+     */
+    ADMIN;
 
     public static Role fromString(String name) {
         return Arrays.stream(values())

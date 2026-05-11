@@ -26,18 +26,11 @@ public class SecurityService {
     public void checkPrivilegeReadAccount(Long accountId) {
         CustomUserDetails user = getCurrentUser();
 
-        // MANAGER может читать все аккаунты
-        if (user != null &&
-                user.hasRole(Role.MANAGER) &&
-                user.hasPrivilege(Privilege.ACCOUNT_READ) &&
-                user.hasPrivilege(Privilege.ACCOUNT_READ_BY_PHONE)
-        ) {
+        if (user != null && user.hasPrivilege(Privilege.ACCOUNT_SUPER_READ)) {
             return;
         }
 
-        // USER может читать только свой аккаунт
         if (user != null &&
-                user.hasRole(Role.USER) &&
                 user.hasPrivilege(Privilege.ACCOUNT_READ) &&
                 user.hasPrivilege(Privilege.ACCOUNT_READ_BY_PHONE) &&
                 user.getAccountId() != null &&
@@ -52,8 +45,10 @@ public class SecurityService {
     public void checkPrivilegeActivateAccount(Long accountId) {
         CustomUserDetails user = getCurrentUser();
 
-        // USER может активировать только свой аккаунт
-        if (user.hasRole(Role.USER) && user.hasPrivilege(Privilege.ACCOUNT_ACTIVATE) && user.getAccountId() != null && user.getAccountId().equals(accountId)) {
+        if (user != null &&
+                user.hasPrivilege(Privilege.ACCOUNT_ACTIVATE) &&
+                user.getAccountId() != null && user.getAccountId().equals(accountId)
+        ) {
             return;
         }
 
@@ -63,8 +58,10 @@ public class SecurityService {
     public void checkPrivilegeCreateBill(Long accountId) {
         CustomUserDetails user = getCurrentUser();
 
-        // USER может создавать счета только для своего аккаунта
-        if (user != null && user.hasRole(Role.USER) && user.hasPrivilege(Privilege.BILL_CREATE) && user.getAccountId() != null && user.getAccountId().equals(accountId)) {
+        if (user != null &&
+                user.hasPrivilege(Privilege.BILL_CREATE) &&
+                user.getAccountId() != null && user.getAccountId().equals(accountId)
+        ) {
             return;
         }
 
@@ -74,17 +71,11 @@ public class SecurityService {
     public void checkPrivilegeReadBill(Long billId) {
         CustomUserDetails user = getCurrentUser();
 
-        if (user != null &&
-                user.hasRole(Role.MANAGER) &&
-                user.hasPrivilege(Privilege.BILL_READ) &&
-                user.hasPrivilege(Privilege.BILL_READ_DEFAULT)
-        ) {
+        if (user != null && user.hasPrivilege(Privilege.BILL_SUPER_READ)) {
             return;
         }
 
-        // USER может читать только свои счета
         if (user != null &&
-                user.hasRole(Role.USER) &&
                 user.hasPrivilege(Privilege.BILL_READ) &&
                 user.hasPrivilege(Privilege.BILL_READ_DEFAULT) &&
                 isBillOwnedByCurrentUser(billId)
@@ -98,10 +89,9 @@ public class SecurityService {
     public void checkPrivilegeReplenishBill(Long billId) {
         CustomUserDetails user = getCurrentUser();
 
-        // USER может пополнять только свои счета
         if (user != null &&
-                user.hasRole(Role.USER) &&
-                user.hasPrivilege(Privilege.BILL_REPLENISH) && isBillOwnedByCurrentUser(billId)
+                user.hasPrivilege(Privilege.BILL_REPLENISH) &&
+                isBillOwnedByCurrentUser(billId)
         ) {
             return;
         }
@@ -112,15 +102,13 @@ public class SecurityService {
     public void checkPrivilegeReadPaymentStatus(String transactionId) {
         CustomUserDetails user = getCurrentUser();
 
-        // MANAGER имеет доступ ко всем транзакциям
-        if (user != null && user.hasRole(Role.MANAGER) && user.hasPrivilege(Privilege.PAYMENT_READ_STATUS)) {
+        if (user != null && user.hasPrivilege(Privilege.PAYMENT_SUPER_READ_STATUS)) {
             return;
         }
 
-        // USER может читать статус только если он отправитель или получатель
         if (user != null &&
-                user.hasRole(Role.USER) &&
-                user.hasPrivilege(Privilege.PAYMENT_READ_STATUS) && isTransactionRelatedToCurrentUser(transactionId)
+                user.hasPrivilege(Privilege.PAYMENT_READ_STATUS) &&
+                isTransactionRelatedToCurrentUser(transactionId)
         ) {
             return;
         }
@@ -132,7 +120,6 @@ public class SecurityService {
         CustomUserDetails user = getCurrentUser();
 
         if (user != null &&
-                user.hasRole(Role.USER) &&
                 user.hasPrivilege(Privilege.PAYMENT_CREATE) && isBillOwnedByCurrentUser(senderBillId)
         ) {
             return;

@@ -29,7 +29,7 @@ public class BankAccountController {
     private final BankAccountService bankAccountService;
 
     @PostMapping
-    @PreAuthorize("hasRole('MANAGER') and hasAuthority('ACCOUNT_CREATE')")
+    @PreAuthorize("hasAuthority('ACCOUNT_CREATE')")
     @Operation(
             summary = "Создание нового аккаунта",
             description = "Создает новый аккаунт и дефолтный счет (неактивный). Только для MANAGER в офисе банка."

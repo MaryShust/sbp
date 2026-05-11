@@ -2,6 +2,7 @@ package com.example.sbp.security;
 
 import com.example.sbp.exception.FileParseException;
 import com.example.sbp.exception.UserAlreadyExistsException;
+import com.example.sbp.repository.RoleRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,10 +21,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -33,9 +32,13 @@ public class XmlUserDetailsService implements UserDetailsService {
     private String xmlPath;
 
     private final PasswordEncoder passwordEncoder;
+    private final RoleRepository roleRepository;
 
-    public XmlUserDetailsService(PasswordEncoder passwordEncoder) {
+    public XmlUserDetailsService(PasswordEncoder passwordEncoder,
+                                 RoleRepository roleRepository
+    ) {
         this.passwordEncoder = passwordEncoder;
+        this.roleRepository = roleRepository;
     }
 
     @Override
@@ -151,8 +154,8 @@ public class XmlUserDetailsService implements UserDetailsService {
         String versionStr = userElement.getAttribute("tokenVersion");
         int tokenVersion = !versionStr.isBlank() ? Integer.parseInt(versionStr) : 0;
 
-        Set<Role> roles = parseRoles(rolesStr);
-        Set<Privilege> privileges = collectPrivileges(roles);
+        Role role = parseRole(rolesStr);
+        Set<Privilege> privileges = collectPrivilegesFromDb(role);
 
         return new CustomUserDetails(username, password, role, privileges, accountId, phoneNumber, tokenVersion);
     }
@@ -250,9 +253,17 @@ public class XmlUserDetailsService implements UserDetailsService {
         return Role.fromString(rolesStr);
     }
 
-    private Set<Privilege> collectPrivileges(Set<Role> roles) {
+    private Set<Privilege> collectPrivilegesFromDb(Role role) {
         Set<Privilege> privileges = new HashSet<>();
-        roles.forEach(role -> privileges.addAll(role.getPrivileges()));
+        com.example.sbp.entity.Role roleEntity = roleRepository.findByName(role.name()).orElse(null);
+        if (roleEntity != null) {
+            for (com.example.sbp.entity.Privilege priv : roleEntity.getPrivileges()) {
+                try {
+                    privileges.add(Privilege.valueOf(priv.getName()));
+                } catch (IllegalArgumentException ignored) {
+                }
+            }
+        }
         return privileges;
     }
 }
