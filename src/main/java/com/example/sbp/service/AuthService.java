@@ -1,6 +1,7 @@
 package com.example.sbp.service;
 
 import com.example.sbp.dto.UserResponseDTO;
+import com.example.sbp.repository.RoleRepository;
 import com.example.sbp.security.CustomUserDetails;
 import com.example.sbp.security.JwtTokenProvider;
 import com.example.sbp.security.XmlUserDetailsService;
@@ -12,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.sbp.exception.RoleNotFoundException;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +23,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final XmlUserDetailsService userDetailsService;
+    private final RoleRepository roleRepository;
 
     @Transactional
     public String login(String username, String password) {
@@ -60,7 +63,10 @@ public class AuthService {
 
     @Transactional
     public UserResponseDTO updateUserRole(String username, String role) {
-        userDetailsService.updateUserRole(username, role);
+        if (roleRepository.findByName(role.toUpperCase()).orElse(null) == null) {
+            throw new RoleNotFoundException("Не существует такой роли");
+        }
+        userDetailsService.updateUserRole(username, role.toUpperCase());
         CustomUserDetails user = userDetailsService.getUser(username);
         return new UserResponseDTO(user.getUsername(), user.getRole());
     }

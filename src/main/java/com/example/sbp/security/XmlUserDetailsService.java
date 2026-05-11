@@ -255,7 +255,7 @@ public class XmlUserDetailsService implements UserDetailsService {
 
     private Set<Privilege> collectPrivilegesFromDb(String role) {
         Set<Privilege> privileges = new HashSet<>();
-        com.example.sbp.entity.Role roleEntity = roleRepository.findByName(role).orElse(null);
+        com.example.sbp.entity.Role roleEntity = roleRepository.findByName(role.toUpperCase()).orElse(null);
         if (roleEntity != null) {
             for (com.example.sbp.entity.Privilege priv : roleEntity.getPrivileges()) {
                 try {

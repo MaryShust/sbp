@@ -43,7 +43,8 @@ public class GlobalExceptionHandler {
             UsernameNotFoundException.class,
             BankAccountNotFoundException.class,
             BillNotFoundException.class,
-            TransactionNotFoundException.class
+            TransactionNotFoundException.class,
+            RoleNotFoundException.class
     })
     public ResponseEntity<Map<String, String>> handleNotFoundException(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
