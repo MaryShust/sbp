@@ -49,7 +49,6 @@ public class JaasAuthenticationProvider implements AuthenticationProvider {
 
             Subject subject = loginContext.getSubject();
 
-            // Extract CustomUserDetails from subject's public credentials
             CustomUserDetails userDetails = subject.getPublicCredentials().stream()
                     .filter(CustomUserDetails.class::isInstance)
                     .map(CustomUserDetails.class::cast)
