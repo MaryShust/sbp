@@ -23,7 +23,8 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
-
+import com.example.sbp.entity.PrivilegeEntity;
+import com.example.sbp.entity.Role;
 @Slf4j
 @Service
 public class XmlUserDetailsService implements UserDetailsService {
@@ -255,9 +256,9 @@ public class XmlUserDetailsService implements UserDetailsService {
 
     private Set<Privilege> collectPrivilegesFromDb(String role) {
         Set<Privilege> privileges = new HashSet<>();
-        com.example.sbp.entity.Role roleEntity = roleRepository.findByName(role.toUpperCase()).orElse(null);
+        Role roleEntity = roleRepository.findByName(role.toUpperCase()).orElse(null);
         if (roleEntity != null) {
-            for (com.example.sbp.entity.Privilege priv : roleEntity.getPrivileges()) {
+            for (PrivilegeEntity priv : roleEntity.getPrivileges()) {
                 try {
                     privileges.add(Privilege.valueOf(priv.getName()));
                 } catch (IllegalArgumentException ignored) {

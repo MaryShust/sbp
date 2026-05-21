@@ -10,7 +10,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "name")
-public class Privilege {
+public class PrivilegeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
