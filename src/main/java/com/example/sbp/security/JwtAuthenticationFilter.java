@@ -30,7 +30,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-
         String jwt = getJwtFromRequest(request);
 
         if (!StringUtils.hasText(jwt)) {
@@ -51,8 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 for (String privilege : privilegesStr) {
                     try {
                         privileges.add(Privilege.valueOf(privilege));
-                    } catch (IllegalArgumentException ignored) {
-                    }
+                    } catch (IllegalArgumentException ignored) {}
                 }
 
                 CustomUserDetails userDetails = new CustomUserDetails(
@@ -70,7 +68,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (ExpiredJwtException ex) {
             request.setAttribute("jwt_expired", true);
         } catch (Exception ex) {
-            logger.error("Could not set user authentication", ex);
+            logger.error("Auth error", ex);
         }
 
         filterChain.doFilter(request, response);

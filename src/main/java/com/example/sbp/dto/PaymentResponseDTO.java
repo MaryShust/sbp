@@ -2,14 +2,10 @@ package com.example.sbp.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-@Setter
-@Getter
 @Schema(description = "Ответ на перевод по СБП")
 public class PaymentResponseDTO {
 

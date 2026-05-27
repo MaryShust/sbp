@@ -5,8 +5,7 @@ import lombok.*;
 
 @Entity
 @Table(name = "privileges")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "name")

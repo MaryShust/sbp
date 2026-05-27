@@ -17,7 +17,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-@Tag(name = "Authentication", description = "API for user authentication and management")
+@Tag(name = "Authentication", description = "API для аутентификации и управления пользователями")
 public class AuthController {
 
     private final AuthService authService;
@@ -65,8 +65,7 @@ public class AuthController {
         int newTokenVersion = authService.logout(username);
         return ResponseEntity.ok(Map.of(
                 "username", username,
-                "tokenVersion", newTokenVersion,
-                "message", "All tokens invalidated"
+                "tokenVersion", newTokenVersion
         ));
     }
 }

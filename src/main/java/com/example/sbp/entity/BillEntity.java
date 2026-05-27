@@ -11,9 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
-@Setter
-public class Bill {
+public class BillEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

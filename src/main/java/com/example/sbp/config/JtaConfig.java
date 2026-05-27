@@ -22,7 +22,7 @@ public class JtaConfig {
     public UserTransaction userTransaction() throws NamingException {
         InitialContext ctx = new InitialContext();
         UserTransaction ut = (UserTransaction) ctx.lookup("java:jboss/UserTransaction");
-        log.info("UserTransaction looked up from JNDI: {}", ut);
+        log.info("UserTransaction: {}", ut);
         return ut;
     }
 
@@ -30,21 +30,19 @@ public class JtaConfig {
     public TransactionManager transactionManager() throws NamingException {
         InitialContext ctx = new InitialContext();
         TransactionManager tm = (TransactionManager) ctx.lookup("java:jboss/TransactionManager");
-        log.info("TransactionManager looked up from JNDI: {}", tm);
+        log.info("TransactionManager: {}", tm);
         return tm;
     }
 
     @Bean(name = "transactionManager")
     @Primary
-    public PlatformTransactionManager jtaTransactionManager(
-            UserTransaction userTransaction,
-            TransactionManager transactionManager) {
+    public PlatformTransactionManager jtaTransactionManager() throws NamingException {
 
         JtaTransactionManager jtaTransactionManager = new JtaTransactionManager();
-        jtaTransactionManager.setUserTransaction(userTransaction);
-        jtaTransactionManager.setTransactionManager(transactionManager);
+        jtaTransactionManager.setUserTransaction(userTransaction());
+        jtaTransactionManager.setTransactionManager(transactionManager());
         jtaTransactionManager.setAllowCustomIsolationLevels(true);
-        log.info("JtaTransactionManager created for WildFly JTA");
+        log.info("JtaTransactionManager создан для WildFly JTA");
         return jtaTransactionManager;
     }
 }

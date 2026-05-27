@@ -1,5 +1,7 @@
 package com.example.sbp.security;
 
+import com.example.sbp.entity.PrivilegeEntity;
+import com.example.sbp.entity.RoleEntity;
 import com.example.sbp.exception.FileParseException;
 import com.example.sbp.exception.UserAlreadyExistsException;
 import com.example.sbp.repository.RoleRepository;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import java.util.UUID;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
@@ -23,8 +26,7 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
-import com.example.sbp.entity.PrivilegeEntity;
-import com.example.sbp.entity.Role;
+
 @Slf4j
 @Service
 public class XmlUserDetailsService implements UserDetailsService {
@@ -35,9 +37,7 @@ public class XmlUserDetailsService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
 
-    public XmlUserDetailsService(PasswordEncoder passwordEncoder,
-                                 RoleRepository roleRepository
-    ) {
+    public XmlUserDetailsService(PasswordEncoder passwordEncoder, RoleRepository roleRepository) {
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
     }
@@ -48,7 +48,6 @@ public class XmlUserDetailsService implements UserDetailsService {
         Element userElement = findUserElement(document, username);
 
         if (userElement == null) {
-            log.info("User not found, creating new user: {} with USER role", username);
             userElement = createNewUser(document, username, null, null);
         }
 
@@ -58,52 +57,51 @@ public class XmlUserDetailsService implements UserDetailsService {
     public synchronized void createUserWithPhone(String username, String rawPassword, String phoneNumber) {
         Document document = loadDocument();
         if (findUserElement(document, username) != null) {
-            log.warn("User already exists: {}", username);
-            throw new UserAlreadyExistsException("User already exists");
+            log.debug("Пользователь уже существует: {}", username);
+            throw new UserAlreadyExistsException("Пользователь уже существует");
         }
         if (phoneNumber != null && !phoneNumber.isBlank() && findUserElementByPhone(document, phoneNumber) != null) {
-            log.warn("Phone number already in use: {}", phoneNumber);
-            throw new UserAlreadyExistsException("Phone number already in use");
+            log.debug("Номер телефона уже используется: {}", phoneNumber);
+            throw new UserAlreadyExistsException("Номер телефона уже используется");
         }
         createNewUser(document, username, rawPassword, phoneNumber);
         saveDocument(document);
-        log.info("Created new user: {} with phone: {}", username, phoneNumber);
+        log.debug("Создан новый пользователь: {} с телефоном: {}", username, phoneNumber);
     }
 
     public synchronized void updateUserRole(String username, String newRoleName) {
         Document document = loadDocument();
         Element userElement = findUserElement(document, username);
         if (userElement == null) {
-            throw new UsernameNotFoundException("User not found: " + username);
+            throw new UsernameNotFoundException("Пользователь не найден: " + username);
         }
         userElement.setAttribute("roles", newRoleName);
         incrementTokenVersion(userElement);
         saveDocument(document);
-        log.info("Updated roles for user {}: {}", username, newRoleName);
+        log.debug("Обновили роль для пользователя {}: {}", username, newRoleName);
     }
 
     public synchronized void updateUserAccountIdByPhone(String phoneNumber, Long accountId) {
         Document document = loadDocument();
         Element userElement = findUserElementByPhone(document, phoneNumber);
         if (userElement == null) {
-            log.info("No user found with phone: {}, skipping accountId assignment", phoneNumber);
+            log.debug("Не нашли пользователя с телефоном: {}", phoneNumber);
             return;
         }
         userElement.setAttribute("accountId", accountId != null ? accountId.toString() : "");
         incrementTokenVersion(userElement);
         saveDocument(document);
-        log.info("Updated accountId for user with phone {}: {}", phoneNumber, accountId);
+        log.debug("Обновлен accountId для пользователя с номером телефона {}: {}", phoneNumber, accountId);
     }
 
     public synchronized int incrementTokenVersion(String username) {
         Document document = loadDocument();
         Element userElement = findUserElement(document, username);
         if (userElement == null) {
-            throw new UsernameNotFoundException("User not found: " + username);
+            throw new UsernameNotFoundException("Пользователь не найден: " + username);
         }
         int newVersion = incrementTokenVersion(userElement);
         saveDocument(document);
-        log.info("Incremented token version for user {}: {}", username, newVersion);
         return newVersion;
     }
 
@@ -134,7 +132,7 @@ public class XmlUserDetailsService implements UserDetailsService {
         Document document = loadDocument();
         Element userElement = findUserElement(document, username);
         if (userElement == null) {
-            throw new UsernameNotFoundException("User not found: " + username);
+            throw new UsernameNotFoundException("Пользователь не найден: " + username);
         }
         return buildUserDetails(userElement);
     }
@@ -174,7 +172,7 @@ public class XmlUserDetailsService implements UserDetailsService {
             }
             return builder.parse(file);
         } catch (Exception e) {
-            throw new FileParseException("Load document fail");
+            throw new FileParseException("Ошибка загрузки");
         }
     }
 
@@ -186,7 +184,7 @@ public class XmlUserDetailsService implements UserDetailsService {
             transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
             transformer.transform(new DOMSource(document), new StreamResult(file));
         } catch (Exception e) {
-            throw new FileParseException("Save to document fail");
+            throw new FileParseException("Ошибка сохранения");
         }
     }
 
@@ -221,7 +219,7 @@ public class XmlUserDetailsService implements UserDetailsService {
     private Element createNewUser(Document document, String username, String rawPassword, String phoneNumber) {
         String encodedPassword = rawPassword != null && !rawPassword.isEmpty()
                 ? "{bcrypt}" + passwordEncoder.encode(rawPassword)
-                : "{bcrypt}" + passwordEncoder.encode(java.util.UUID.randomUUID().toString());
+                : "{bcrypt}" + passwordEncoder.encode(UUID.randomUUID().toString());
 
         Element userElement = document.createElement("user");
         userElement.setAttribute("username", username);
@@ -256,11 +254,11 @@ public class XmlUserDetailsService implements UserDetailsService {
 
     private Set<Privilege> collectPrivilegesFromDb(String role) {
         Set<Privilege> privileges = new HashSet<>();
-        Role roleEntity = roleRepository.findByName(role.toUpperCase()).orElse(null);
+        RoleEntity roleEntity = roleRepository.findByName(role.toUpperCase()).orElse(null);
         if (roleEntity != null) {
-            for (PrivilegeEntity priv : roleEntity.getPrivileges()) {
+            for (PrivilegeEntity privilegeEntity : roleEntity.getPrivileges()) {
                 try {
-                    privileges.add(Privilege.valueOf(priv.getName()));
+                    privileges.add(Privilege.valueOf(privilegeEntity.getName()));
                 } catch (IllegalArgumentException ignored) {
                 }
             }

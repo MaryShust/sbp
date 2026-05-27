@@ -2,13 +2,13 @@ package com.example.sbp.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import lombok.*;
+import lombok.Data;
 
 @Data
 @Schema(description = "Запрос на аутентификацию")
 public class LoginRequestDTO {
 
-    @NotBlank(message = "Username is required")
+    @NotBlank(message = "Имя пользователя обязательно")
     @Schema(
             description = "Имя пользователя",
             example = "user",
@@ -16,7 +16,7 @@ public class LoginRequestDTO {
     )
     private String username;
 
-    @NotBlank(message = "Password is required")
+    @NotBlank(message = "Пароль обязателен")
     @Schema(
             description = "Пароль",
             example = "password123",

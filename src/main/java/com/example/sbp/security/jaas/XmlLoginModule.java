@@ -6,10 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import javax.security.auth.Subject;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.*;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
 import java.util.*;
@@ -31,7 +28,7 @@ public class XmlLoginModule implements LoginModule {
 
     @Override
     public boolean login() throws LoginException {
-        if (callbackHandler == null) throw new LoginException("No CallbackHandler available");
+        if (callbackHandler == null) throw new LoginException("Нет CallbackHandler");
 
         NameCallback nameCallback = new NameCallback("Username: ");
         PasswordCallback passwordCallback = new PasswordCallback("Password: ", false);
@@ -39,7 +36,7 @@ public class XmlLoginModule implements LoginModule {
         try {
             callbackHandler.handle(new Callback[]{nameCallback, passwordCallback});
         } catch (Exception e) {
-            throw new LoginException("Error getting credentials: " + e.getMessage());
+            throw new LoginException("Ошибка получения данных: " + e.getMessage());
         }
 
         username = nameCallback.getName();
@@ -50,43 +47,40 @@ public class XmlLoginModule implements LoginModule {
             PasswordEncoder passwordEncoder = SpringApplicationContextHolder.getBean(PasswordEncoder.class);
 
             if (!userDetailsService.userExists(username)) {
-                throw new LoginException("User not found. Please register first.");
+                throw new LoginException("Пользователь не найден");
             }
 
             UserDetails details = userDetailsService.loadUserByUsername(username);
             if (details instanceof CustomUserDetails) {
                 userDetails = (CustomUserDetails) details;
             } else {
-                throw new LoginException("Invalid user details type");
+                throw new LoginException("Неверный тип UserDetails");
             }
 
             if (!verifyPassword(password, userDetails.getPassword(), passwordEncoder)) {
-                throw new LoginException("Invalid password");
+                throw new LoginException("Неверный пароль");
             }
 
             if (!userDetails.isEnabled()) {
-                throw new LoginException("Account is disabled");
+                throw new LoginException("Аккаунт отключен");
             }
 
             succeeded = true;
-            log.info("JAAS login successful for user: {}", username);
+            log.debug("Пользователь успешно вошел в систему: {}", username);
             return true;
         } catch (LoginException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Login failed for user: {}", username, e);
+            log.debug("Вход в систему для пользователя не удался: {}", username, e);
             succeeded = false;
-            throw new LoginException("Authentication failed: " + e.getMessage());
+            throw new LoginException("Ошибка: " + e.getMessage());
         }
     }
 
     @Override
     public boolean commit() throws LoginException {
         if (!succeeded || userDetails == null) return false;
-
-        // Store CustomUserDetails directly in subject's public credentials
         subject.getPublicCredentials().add(userDetails);
-
         commitSucceeded = true;
         return true;
     }

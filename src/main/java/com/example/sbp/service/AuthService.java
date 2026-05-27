@@ -6,7 +6,6 @@ import com.example.sbp.security.CustomUserDetails;
 import com.example.sbp.security.JwtTokenProvider;
 import com.example.sbp.security.XmlUserDetailsService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,7 +16,6 @@ import com.example.sbp.exception.RoleNotFoundException;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class AuthService {
 
     private final AuthenticationManager authenticationManager;
@@ -63,10 +61,11 @@ public class AuthService {
 
     @Transactional
     public UserResponseDTO updateUserRole(String username, String role) {
-        if (roleRepository.findByName(role.toUpperCase()).orElse(null) == null) {
-            throw new RoleNotFoundException("Не существует такой роли");
+        String upperRole = role.toUpperCase();
+        if (roleRepository.findByName(upperRole).isEmpty()) {
+            throw new RoleNotFoundException("Роль не найдена: " + role);
         }
-        userDetailsService.updateUserRole(username, role.toUpperCase());
+        userDetailsService.updateUserRole(username, upperRole);
         CustomUserDetails user = userDetailsService.getUser(username);
         return new UserResponseDTO(user.getUsername(), user.getRole());
     }

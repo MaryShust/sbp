@@ -23,7 +23,7 @@ public class JaasAuthenticationProvider implements AuthenticationProvider {
 
     static {
         JaasConfiguration.register();
-        log.info("JAAS configuration registered");
+        log.debug("JAAS конфигурация зарегистрирована");
     }
 
     @Override
@@ -53,12 +53,12 @@ public class JaasAuthenticationProvider implements AuthenticationProvider {
                     .filter(CustomUserDetails.class::isInstance)
                     .map(CustomUserDetails.class::cast)
                     .findFirst()
-                    .orElseThrow(() -> new LoginException("UserDetails not found in subject"));
+                    .orElseThrow(() -> new LoginException("UserDetails не найдены"));
 
             return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
         } catch (LoginException e) {
-            log.warn("JAAS auth failed for {}: {}", username, e.getMessage());
+            log.debug("Вход по JAAS зафейлился с {}: {}", username, e.getMessage());
             throw new BadCredentialsException(e.getMessage(), e);
         }
     }

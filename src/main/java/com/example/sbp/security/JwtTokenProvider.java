@@ -64,85 +64,60 @@ public class JwtTokenProvider {
         return builder.signWith(getSigningKey()).compact();
     }
 
-    public String getUsernameFromToken(String token) {
+    private Claims parseClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
+                .getPayload();
+    }
+
+    public String getUsernameFromToken(String token) {
+        return parseClaims(token).getSubject();
     }
 
     public String getRoleFromToken(String token) {
-        String role = Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .get("role", String.class);
-        return role;
+        return parseClaims(token).get("role", String.class);
     }
 
     public List<String> getPrivilegesFromToken(String token) {
-        String privStr = Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .get("privileges", String.class);
+        String privStr = parseClaims(token).get("privileges", String.class);
         return privStr == null || privStr.isEmpty() ? List.of() : List.of(privStr.split(","));
     }
 
     public Long getAccountIdFromToken(String token) {
-        Object accountId = Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .get("accountId");
+        Object accountId = parseClaims(token).get("accountId");
         return accountId != null ? Long.parseLong(accountId.toString()) : null;
     }
 
     public String getPhoneNumberFromToken(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .get("phoneNumber", String.class);
+        return parseClaims(token).get("phoneNumber", String.class);
     }
 
     public int getTokenVersionFromToken(String token) {
-        Object version = Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .get("tokenVersion");
+        Object version = parseClaims(token).get("tokenVersion");
         return version != null ? Integer.parseInt(version.toString()) : 0;
     }
 
     public boolean validateToken(String token) throws ExpiredJwtException {
         try {
-            Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token);
-
-            // Check token version
+            parseClaims(token);
             String username = getUsernameFromToken(token);
             int tokenVersion = getTokenVersionFromToken(token);
             int currentVersion = userDetailsService.getTokenVersion(username);
 
             if (tokenVersion < currentVersion) {
-                log.warn("Token version mismatch for user {}: token={}, current={}",
+                log.debug("Версия токена устарела для пользователя {}: текущая версия токена={}, актуальная версия токена={}",
                         username, tokenVersion, currentVersion);
                 return false;
             }
 
             return true;
         } catch (ExpiredJwtException e) {
-            log.warn("JWT token is expired: {}", e.getMessage());
+            log.debug("Срок действия JWT-токена истек: {}", e.getMessage());
             throw e;
         } catch (JwtException | IllegalArgumentException e) {
-            log.warn("Invalid JWT token: {}", e.getMessage());
+            log.debug("Недействительный JWT-токен: {}", e.getMessage());
             return false;
         }
     }

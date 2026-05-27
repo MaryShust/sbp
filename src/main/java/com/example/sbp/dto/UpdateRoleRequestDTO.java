@@ -13,11 +13,11 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Запрос на изменение ролей пользователя")
 public class UpdateRoleRequestDTO {
 
-    @NotBlank(message = "Username is required")
+    @NotBlank(message = "Имя пользователя обязательно")
     @Schema(description = "Имя пользователя", example = "user123")
     private String username;
 
-    @NotEmpty(message = "At least one role is required")
+    @NotEmpty(message = "Роль обязательна")
     @Schema(description = "Роль", example = "USER")
     private String role;
 }

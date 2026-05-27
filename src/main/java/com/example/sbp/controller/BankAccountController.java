@@ -55,7 +55,7 @@ public class BankAccountController {
         result.put("phoneNumber", response.getPhoneNumber());
         result.put("defaultBillId", response.getDefaultBillId());
         result.put("status", "created");
-        result.put("message", "Account created. Default bill is inactive - please fund it to activate");
+        result.put("message", "Счет создан. Пополните для активации");
         return ResponseEntity.ok(result);
     }
 
@@ -117,7 +117,7 @@ public class BankAccountController {
     ) {
         bankAccountService.activateDefaultBill(accountId, startBalance);
         Map<String, String> response = new HashMap<>();
-        response.put("message", "Default bill activated successfully");
+        response.put("message", "Дефолтный счет активирован");
         return ResponseEntity.ok(response);
     }
 }

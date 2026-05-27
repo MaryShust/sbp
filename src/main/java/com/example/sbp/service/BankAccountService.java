@@ -2,8 +2,8 @@ package com.example.sbp.service;
 
 import com.example.sbp.dto.BankAccountRequestDTO;
 import com.example.sbp.dto.BankAccountResponseDTO;
-import com.example.sbp.entity.BankAccount;
-import com.example.sbp.entity.Bill;
+import com.example.sbp.entity.BankAccountEntity;
+import com.example.sbp.entity.BillEntity;
 import com.example.sbp.exception.*;
 import com.example.sbp.repository.BankAccountRepository;
 import com.example.sbp.repository.BillRepository;
@@ -28,7 +28,7 @@ public class BankAccountService {
 
     @Transactional
     public BankAccountResponseDTO createAccount(BankAccountRequestDTO bankAccountRequestDTO) {
-        log.info("Creating new account with phone: {}", bankAccountRequestDTO.getPhoneNumber());
+        log.debug("Создать новый аккаунт с телефоном: {}", bankAccountRequestDTO.getPhoneNumber());
 
         validateOwnerName(bankAccountRequestDTO.getOwnerName());
         validateBankBic(bankAccountRequestDTO.getBankBic());
@@ -39,8 +39,7 @@ public class BankAccountService {
             throw new BankAccountAlreadyExistsException("Номер телефона уже существует");
         }
 
-
-        BankAccount account = BankAccount.builder()
+        BankAccountEntity account = BankAccountEntity.builder()
                 .phoneNumber(bankAccountRequestDTO.getPhoneNumber())
                 .ownerName(bankAccountRequestDTO.getOwnerName())
                 .bankBic(bankAccountRequestDTO.getBankBic())
@@ -49,26 +48,25 @@ public class BankAccountService {
                 .build();
 
         account = accountRepository.save(account);
-        log.info("Account saved with ID: {}", account.getId());
+        log.debug("Аккаунт сохранен с ID: {}", account.getId());
 
 
-        Bill defaultBill = Bill.builder()
+        BillEntity defaultBillEntity = BillEntity.builder()
                 .accountId(account.getId())
                 .balance(BigDecimal.ZERO)
                 .isActive(false)  // дефолтный счет требуется в дальнейшем активировать
                 .build();
 
-        defaultBill = billRepository.save(defaultBill);
-        log.info("Default bill created with ID: {} (inactive)", defaultBill.getId());
+        defaultBillEntity = billRepository.save(defaultBillEntity);
+        log.debug("Дефолтный счет создан с ID: {} (inactive)", defaultBillEntity.getId());
 
         // Обновление всего и вся
-        account.setDefaultBillId(defaultBill.getId());
-        account.getAllBillIds().add(defaultBill.getId());
+        account.setDefaultBillId(defaultBillEntity.getId());
+        account.getAllBillIds().add(defaultBillEntity.getId());
         account = accountRepository.save(account);
 
-        // Link account to user by phone number
         userDetailsService.updateUserAccountIdByPhone(account.getPhoneNumber(), account.getId());
-        log.info("Linked account {} to user with phone {}", account.getId(), account.getPhoneNumber());
+        log.debug("Связали аккаунт {} с пользователем с номером телефона {}", account.getId(), account.getPhoneNumber());
 
         return mapToResponseDTO(account);
     }
@@ -76,13 +74,13 @@ public class BankAccountService {
     public BankAccountResponseDTO getAccountById(Long id) {
         securityService.checkPrivilegeReadAccount(id);
 
-        BankAccount account = accountRepository.findById(id)
+        BankAccountEntity account = accountRepository.findById(id)
                 .orElseThrow(() -> new BankAccountNotFoundException("Аккаунт не найден с id: " + id));
         return mapToResponseDTO(account);
     }
 
     public BankAccountResponseDTO getAccountByPhone(String phoneNumber) {
-        BankAccount account = accountRepository.findByPhoneNumber(phoneNumber)
+        BankAccountEntity account = accountRepository.findByPhoneNumber(phoneNumber)
                 .orElseThrow(() -> new BankAccountNotFoundException("Аккаунт не найден с телефоном: " + phoneNumber));
 
         securityService.checkPrivilegeReadAccount(account.getId());
@@ -94,22 +92,22 @@ public class BankAccountService {
     public void activateDefaultBill(Long accountId, BigDecimal startBalance) {
         securityService.checkPrivilegeActivateAccount(accountId);
 
-        BankAccount account = accountRepository.findById(accountId)
+        BankAccountEntity account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new BankAccountNotFoundException("Аккаунт не найден с id: " + accountId));
 
-        Bill defaultBill = billRepository.findById(account.getDefaultBillId())
+        BillEntity defaultBillEntity = billRepository.findById(account.getDefaultBillId())
                 .orElseThrow(() -> new BillNotFoundException("Дефолтный счет не найден"));
 
         // Баланс должен быть положительным
-        if (defaultBill.getBalance().compareTo(BigDecimal.ZERO) == 0) {
-            defaultBill.setIsActive(true);
-            defaultBill.setBalance(startBalance);
-            billRepository.save(defaultBill);
-            log.info("Default bill {} activated for account {}", defaultBill.getId(), accountId);
+        if (defaultBillEntity.getBalance().compareTo(BigDecimal.ZERO) == 0) {
+            defaultBillEntity.setIsActive(true);
+            defaultBillEntity.setBalance(startBalance);
+            billRepository.save(defaultBillEntity);
+            log.debug("Дефолтный счет {} активирован для аккаунта {}", defaultBillEntity.getId(), accountId);
         }
     }
 
-    private BankAccountResponseDTO mapToResponseDTO(BankAccount account) {
+    private BankAccountResponseDTO mapToResponseDTO(BankAccountEntity account) {
         BankAccountResponseDTO dto = new BankAccountResponseDTO();
         dto.setId(account.getId());
         dto.setPhoneNumber(account.getPhoneNumber());
@@ -125,14 +123,13 @@ public class BankAccountService {
 
     private void validateOwnerName(String ownerName) {
         if (ownerName == null || ownerName.isBlank()) {
-            throw new OwnerNameFormatException("Owner name cannot be empty");
+            throw new OwnerNameFormatException("Имя не может быть пустым");
         }
 
         String trimmed = ownerName.trim();
-
         if (trimmed.length() > 100) {
             throw new OwnerNameFormatException(
-                    String.format("Owner name must not exceed 100 characters, current length: %d",
+                    String.format("Имя владельца не должно превышать 100 символов, текущая длина: %d",
                             trimmed.length())
             );
         }
@@ -140,29 +137,26 @@ public class BankAccountService {
 
     private void validatePhoneNumber(String phoneNumber) {
         if (phoneNumber == null || phoneNumber.isBlank()) {
-            throw new PhoneNumberFormatException("Phone number cannot be empty");
+            throw new PhoneNumberFormatException("Телефон не может быть пустым");
         }
 
         String trimmed = phoneNumber.trim();
-
         if (trimmed.length() > 11) {
             throw new PhoneNumberFormatException(
-                    String.format("Phone number must not exceed 11 characters, current length: %d",
+                    String.format("Номер телефона не должен превышать 11 символов, текущая длина: %d",
                             trimmed.length())
             );
         }
 
         // Проверка формата (международный формат)
         if (!trimmed.matches("^7[0-9]{10}$")) {
-            throw new PhoneNumberFormatException(
-                    "Invalid phone number format. Supported formats: +79991234567"
-            );
+            throw new PhoneNumberFormatException("Неверный формат телефона");
         }
     }
 
     private void validateBankBic(String bankBic) {
         if (bankBic == null || bankBic.isBlank()) {
-            throw new BankBicFormatException("Bank BIC cannot be empty");
+            throw new BankBicFormatException("BIC не может быть пустым");
         }
 
         String trimmed = bankBic.trim();
@@ -171,13 +165,13 @@ public class BankAccountService {
         int length = trimmed.length();
         if (length < 8 || length > 11) {
             throw new BankBicFormatException(
-                    String.format("Bank BIC must be 8 or 11 characters, current length: %d", length)
+                    String.format("Код BIC банка должен состоять из 8 или 11 символов, текущая длина: %d", length)
             );
         }
 
         // Проверка на запрещенные символы в BIC
         if (trimmed.contains(" ")) {
-            throw new BankBicFormatException("Bank BIC cannot contain spaces");
+            throw new BankBicFormatException("BIC не может содержать пробелы");
         }
     }
 }
