@@ -5,6 +5,7 @@ import com.example.sbp.dto.PaymentResponseDTO;
 import com.example.sbp.entity.BankAccountEntity;
 import com.example.sbp.entity.BillEntity;
 import com.example.sbp.entity.SbpTransactionEntity;
+import com.example.sbp.kafka.producer.TransactionEventProducer;
 import com.example.sbp.repository.BankAccountRepository;
 import com.example.sbp.repository.BillRepository;
 import com.example.sbp.repository.SbpTransactionRepository;
@@ -28,6 +29,7 @@ public class PaymentService {
     private final BillRepository billRepository;
     private final BankAccountRepository accountRepository;
     private final SbpTransactionRepository transactionRepository;
+    private final TransactionEventProducer transactionEventProducer;
 
     private static final BigDecimal COMMISSION_RATE = new BigDecimal("0.005"); // 0.5%
     private static final BigDecimal MIN_COMMISSION = new BigDecimal("10");
@@ -75,7 +77,6 @@ public class PaymentService {
             throw new InsufficientFundsException("Недостаточно средств на счете отправителя");
         }
 
-        log.debug("TEST MY CODE");
         SbpTransactionEntity transaction = createTransaction(
                 senderBillEntity,
                 receiverBillEntity,
@@ -84,7 +85,6 @@ public class PaymentService {
                 request,
                 commission
         );
-        log.debug("TEST MY CODE 2");
 
         updateBalances(senderBillEntity, receiverBillEntity, request.getAmount(), commission);
 
@@ -92,6 +92,8 @@ public class PaymentService {
         transaction.setStatus(SbpTransactionEntity.TransactionStatus.SUCCESS);
         transaction.setCompletedAt(LocalDateTime.now());
         transactionRepository.save(transaction);
+
+        transactionEventProducer.sendTransactionEvent(transaction);
 
         return convertToResponseDTO(transaction);
     }
@@ -145,7 +147,6 @@ public class PaymentService {
             PaymentRequestDTO request,
             BigDecimal commission
     ) {
-        log.debug("TEST MY CODE 3");
         SbpTransactionEntity transaction = SbpTransactionEntity.builder()
                 .senderBillId(senderBillEntity.getId())
                 .senderBankBic(senderBankBic)
@@ -156,7 +157,6 @@ public class PaymentService {
                 .status(SbpTransactionEntity.TransactionStatus.PENDING)
                 .message(request.getMessage())
                 .build();
-        log.debug("TEST MY CODE 4");
         return transactionRepository.save(transaction);
     }
 
