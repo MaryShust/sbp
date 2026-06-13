@@ -5,6 +5,7 @@ import com.example.sbp.entity.RoleEntity;
 import com.example.sbp.exception.FileParseException;
 import com.example.sbp.exception.UserAlreadyExistsException;
 import com.example.sbp.repository.RoleRepository;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -257,10 +258,9 @@ public class XmlUserDetailsService implements UserDetailsService {
         RoleEntity roleEntity = roleRepository.findByName(role.toUpperCase()).orElse(null);
         if (roleEntity != null) {
             for (PrivilegeEntity privilegeEntity : roleEntity.getPrivileges()) {
-                try {
-                    privileges.add(Privilege.valueOf(privilegeEntity.getName()));
-                } catch (IllegalArgumentException ignored) {
-                }
+
+                privileges.add(Privilege.valueOf(privilegeEntity.getName()));
+
             }
         }
         return privileges;

@@ -28,9 +28,9 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable)
+        http.csrf(AbstractHttpConfigurer::disable)   //Отключает защиту от CSRF-атак
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(exception -> exception
+                .exceptionHandling(exception -> exception   //точка входа ошибок
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 )
                 .authorizeHttpRequests(auth -> auth
@@ -39,6 +39,7 @@ public class SecurityConfig {
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/register",
                                 "/api/v1/payments/health",
+                                "/api/v1/payments/test-transactions",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html"
@@ -46,8 +47,8 @@ public class SecurityConfig {
                         // Все другие endpoints требуют аутентификации
                         .anyRequest().authenticated()
                 )
-                .authenticationProvider(jaasAuthenticationProvider)
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .authenticationProvider(jaasAuthenticationProvider) //Подключает кастомный провайдер аутентификации на базе JAAS.
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); //Встраивает JWT-фильтр в самое начало очереди проверок.
 
         return http.build();
     }
