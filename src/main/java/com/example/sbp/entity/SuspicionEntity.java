@@ -1,6 +1,7 @@
 package com.example.sbp.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import java.time.LocalDateTime;
 
@@ -17,12 +18,14 @@ public class SuspicionEntity {
     private Long id;
 
     @Column(name = "user_name", nullable = false, length = 100)
+    @Size(max = 100, message = "Имя владельца не должно превышать 100 символов")
     private String userName;
 
     @Column(name = "account_id", nullable = false)
     private Long accountId;
 
     @Column(name = "bank_bic", nullable = false, length = 11)
+    @Size(min = 8, max = 11, message = "Код BIC банка должен содержать от 8 до 11 символов")
     private String bankBic;
 
     @Column(name = "duplicate_count", nullable = false)

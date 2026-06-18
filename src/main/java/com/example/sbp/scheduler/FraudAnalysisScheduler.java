@@ -23,8 +23,8 @@ public class FraudAnalysisScheduler {
     private final SuspicionRepository suspicionRepository;
     private final BankAccountRepository accountRepository;
 
-        @Scheduled(fixedRate = 120000)
-        public void analyzeSuspiciousTransactions() {
+    @Scheduled(fixedRate = 120000)
+    public void analyzeSuspiciousTransactions() {
         log.info("Начало анализа мошенничества (каждые 2 минуты)");
 
 

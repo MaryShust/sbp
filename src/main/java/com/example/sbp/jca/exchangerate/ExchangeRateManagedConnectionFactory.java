@@ -1,38 +1,32 @@
 package com.example.sbp.jca.exchangerate;
 
 import jakarta.resource.ResourceException;
-import jakarta.resource.spi.ConnectionRequestInfo;
-import jakarta.resource.spi.ManagedConnection;
-import jakarta.resource.spi.ManagedConnectionFactory;
+import jakarta.resource.spi.*;
 import javax.security.auth.Subject;
 import java.io.PrintWriter;
-import java.io.Serializable;
 import java.util.Set;
 
-public class ExchangeRateManagedConnectionFactory implements ManagedConnectionFactory, Serializable {
+public class ExchangeRateManagedConnectionFactory implements ManagedConnectionFactory {
 
     private PrintWriter logWriter;
 
-//    public ExchangeRateManagedConnectionFactory() {
-//    }
-
     @Override
     public Object createConnectionFactory() throws ResourceException {
-        return new ExchangeRateConnectionFactory(this);
+        return new ExchangeRateConnectionFactoryImpl(this);
     }
 
     @Override
-    public Object createConnectionFactory(jakarta.resource.spi.ConnectionManager cm) throws ResourceException {
-        return new ExchangeRateConnectionFactory(cm, this);
+    public Object createConnectionFactory(ConnectionManager cm) {
+        return new ExchangeRateConnectionFactoryImpl(cm, this);
     }
 
     @Override
-    public ManagedConnection createManagedConnection(Subject subject, ConnectionRequestInfo cxrInfo) throws ResourceException {
+    public ManagedConnection createManagedConnection(Subject subject, ConnectionRequestInfo cxrInfo) {
         return new ExchangeRateManagedConnection();
     }
 
     @Override
-    public ManagedConnection matchManagedConnections(Set connectionSet, Subject subject, ConnectionRequestInfo cxrInfo) throws ResourceException {
+    public ManagedConnection matchManagedConnections(Set connectionSet, Subject subject, ConnectionRequestInfo cxrInfo) {
         for (Object obj : connectionSet) {
             if (obj instanceof ExchangeRateManagedConnection) {
                 return (ManagedConnection) obj;
@@ -42,7 +36,7 @@ public class ExchangeRateManagedConnectionFactory implements ManagedConnectionFa
     }
 
     @Override
-    public void setLogWriter(PrintWriter out) throws ResourceException {
+    public void setLogWriter(PrintWriter out) {
         this.logWriter = out;
     }
 

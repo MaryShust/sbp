@@ -3,7 +3,7 @@ package com.example.sbp.service;
 import com.example.sbp.exception.ExchangeRateNotFoundException;
 import com.example.sbp.exception.ExchangeRateParseException;
 import com.example.sbp.jca.ExchangeRateConnection;
-import com.example.sbp.jca.exchangerate.ExchangeRateConnectionFactory;
+import com.example.sbp.jca.exchangerate.ExchangeRateConnectionFactoryImpl;
 import com.example.sbp.jca.exchangerate.ExchangeRateManagedConnectionFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -16,14 +16,14 @@ import java.io.Serializable;
 @Service
 public class ExchangeRateService implements Serializable {
 
-    private transient ExchangeRateConnectionFactory connectionFactory;
+    private transient ExchangeRateConnectionFactoryImpl connectionFactory;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @PostConstruct
     public void init() {
         try {
             ExchangeRateManagedConnectionFactory mcf = new ExchangeRateManagedConnectionFactory();
-            connectionFactory = (ExchangeRateConnectionFactory) mcf.createConnectionFactory();
+            connectionFactory = (ExchangeRateConnectionFactoryImpl) mcf.createConnectionFactory();
         } catch (ResourceException e) {
             throw new RuntimeException("Не удалось инициализировать фабрику соединений JCA.", e);
         }

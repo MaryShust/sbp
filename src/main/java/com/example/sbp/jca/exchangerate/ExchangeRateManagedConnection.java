@@ -2,21 +2,17 @@ package com.example.sbp.jca.exchangerate;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Serializable;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import jakarta.resource.NotSupportedException;
 import jakarta.resource.ResourceException;
-import jakarta.resource.spi.ConnectionEventListener;
-import jakarta.resource.spi.ConnectionRequestInfo;
-import jakarta.resource.spi.ManagedConnection;
-import jakarta.resource.spi.ManagedConnectionMetaData;
-import jakarta.resource.spi.LocalTransaction;
+import jakarta.resource.spi.*;
 import javax.security.auth.Subject;
 import javax.transaction.xa.XAResource;
 
-public class ExchangeRateManagedConnection implements ManagedConnection, LocalTransaction, Serializable {
+public class ExchangeRateManagedConnection implements ManagedConnection {
 
     private volatile boolean destroyed;
     private PrintWriter logWriter;
@@ -24,7 +20,7 @@ public class ExchangeRateManagedConnection implements ManagedConnection, LocalTr
     @Override
     public Object getConnection(Subject subject, ConnectionRequestInfo cxrInfo) throws ResourceException {
         if (destroyed) {
-            throw new ResourceException("Connection is destroyed");
+            throw new ResourceException("Соединение разорвано");
         }
         return new ExchangeRateConnectionImpl(this);
     }
@@ -35,20 +31,16 @@ public class ExchangeRateManagedConnection implements ManagedConnection, LocalTr
     }
 
     @Override
-    public void cleanup() {
-    }
+    public void cleanup() {}
 
     @Override
-    public void associateConnection(Object connection) throws ResourceException {
-    }
+    public void associateConnection(Object connection) {}
 
     @Override
-    public void addConnectionEventListener(ConnectionEventListener listener) {
-    }
+    public void addConnectionEventListener(ConnectionEventListener listener) {}
 
     @Override
-    public void removeConnectionEventListener(ConnectionEventListener listener) {
-    }
+    public void removeConnectionEventListener(ConnectionEventListener listener) {}
 
     @Override
     public ManagedConnectionMetaData getMetaData() {
@@ -56,35 +48,23 @@ public class ExchangeRateManagedConnection implements ManagedConnection, LocalTr
     }
 
     @Override
-    public void setLogWriter(PrintWriter out) throws ResourceException {
+    public void setLogWriter(PrintWriter out) {
         this.logWriter = out;
     }
 
     @Override
-    public PrintWriter getLogWriter() throws ResourceException {
+    public PrintWriter getLogWriter() {
         return logWriter;
     }
 
     @Override
     public LocalTransaction getLocalTransaction() throws ResourceException {
-        return this;
+        throw new NotSupportedException("getLocalTransaction() не поддерживается");
     }
 
     @Override
     public XAResource getXAResource() throws ResourceException {
-        return null;
-    }
-
-    @Override
-    public void begin() throws ResourceException {
-    }
-
-    @Override
-    public void commit() throws ResourceException {
-    }
-
-    @Override
-    public void rollback() throws ResourceException {
+        throw new NotSupportedException("getXAResource() не поддерживается");
     }
 
     String fetchRates(String baseCurrency) throws IOException, InterruptedException {

@@ -2,6 +2,7 @@ package com.example.sbp.entity;
 
 import com.example.sbp.kafka.dto.RiskLevel;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import java.time.LocalDateTime;
 
@@ -23,7 +24,8 @@ public class PreSuspicionEntity {
     @Column(name = "receiver_account_id", nullable = false)
     private Long receiverAccountId;
 
-    @Column(name = "receiver_bank_bic", length = 11)
+    @Column(name = "receiver_bank_bic", nullable = false, length = 11)
+    @Size(min = 8, max = 11, message = "Код BIC банка должен содержать от 8 до 11 символов")
     private String receiverBankBic;
 
     @Column(name = "event_time", nullable = false)

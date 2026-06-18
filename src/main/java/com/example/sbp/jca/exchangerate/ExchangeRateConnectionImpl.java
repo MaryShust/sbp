@@ -1,32 +1,31 @@
 package com.example.sbp.jca.exchangerate;
 
 import java.io.IOException;
-import java.io.Serializable;
 import com.example.sbp.jca.ExchangeRateConnection;
 
-public class ExchangeRateConnectionImpl implements ExchangeRateConnection, Serializable {
+public class ExchangeRateConnectionImpl implements ExchangeRateConnection {
 
     private final ExchangeRateManagedConnection managedConnection;
     private volatile boolean closed;
 
-    ExchangeRateConnectionImpl(ExchangeRateManagedConnection managedConnection) {
+    public ExchangeRateConnectionImpl(ExchangeRateManagedConnection managedConnection) {
         this.managedConnection = managedConnection;
     }
 
     @Override
-    public synchronized String getExchangeRate(String baseCurrency) {
+    public String getExchangeRate(String baseCurrency) {
         if (closed) {
-            throw new IllegalStateException("Connection is closed");
+            throw new IllegalStateException("Соединение закрыто");
         }
         try {
             return managedConnection.fetchRates(baseCurrency);
         } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Failed to fetch exchange rate", e);
+            throw new RuntimeException("Не удалось получить обменный курс", e);
         }
     }
 
     @Override
-    public synchronized void close() {
+    public void close() {
         closed = true;
     }
 }

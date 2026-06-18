@@ -71,7 +71,7 @@ public class PreFraudCheckConsumer {
             return RiskLevel.LOW;
         } else if (
                 fraudTransaction.getSenderBankBic().equals(fraudTransaction.getReceiverBankBic()) &&
-                (time.isBefore(LocalTime.of(10, 0)) || time.isAfter(LocalTime.of(20, 0)))
+                        (time.isBefore(LocalTime.of(10, 0)) || time.isAfter(LocalTime.of(20, 0)))
         ) {
             if (fraudTransaction.getAmount().compareTo(CRITICAL_AMOUNT_THRESHOLD) > 0) {
                 return RiskLevel.CRITICAL;
