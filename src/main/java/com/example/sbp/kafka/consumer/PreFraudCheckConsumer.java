@@ -26,8 +26,7 @@ public class PreFraudCheckConsumer {
 
     @KafkaListener(
             topics = "sbp-fraud-check",
-            containerFactory = "fraudCheckKafkaListenerContainerFactory",
-            groupId = "sbp-prefraud-consumer-group"
+            containerFactory = "fraudCheckKafkaListenerContainerFactory"
     )
     public void handleFraudCheckRequest(FraudTransactionDTO request) {
         log.info("Обработка запроса на проверку на мошенничество по транзакции: {}", request.getTransactionId());
