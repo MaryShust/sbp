@@ -35,6 +35,10 @@ public class PreFraudCheckConsumer {
                 .map(BillEntity::getAccountId)
                 .orElse(null);
 
+        Long senderAccountId = billRepository.findById(request.getSenderBillId())
+                .map(BillEntity::getAccountId)
+                .orElse(null);
+
         if (receiverAccountId == null) {
             return;
         }
@@ -45,6 +49,10 @@ public class PreFraudCheckConsumer {
                 .transactionId(request.getTransactionId())
                 .receiverAccountId(receiverAccountId)
                 .receiverBankBic(request.getReceiverBankBic())
+                .senderAccountId(senderAccountId)
+                .senderBillId(request.getSenderBillId())
+                .senderBankBic(request.getSenderBankBic())
+                .amount(request.getAmount())
                 .eventTime(request.getCreatedAt())
                 .riskLevel(riskLevel)
                 .build();

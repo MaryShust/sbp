@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Qualifier;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -35,7 +37,7 @@ public class PaymentService {
     private static final BigDecimal MIN_COMMISSION = new BigDecimal("10");
     private static final BigDecimal MAX_COMMISSION = new BigDecimal("1000");
 
-    @Transactional
+    @Transactional(transactionManager = "transactionManager")
     public PaymentResponseDTO processPayment(PaymentRequestDTO request) {
         securityService.checkPrivilegeCreatePayment(request.getSenderBillId());
 

@@ -33,4 +33,10 @@ public class SuspicionEntity {
 
     @Column(name = "analysis_date", nullable = false)
     private LocalDateTime analysisDate;
+
+    @Column(name = "sender_account_id")
+    private Long senderAccountId;
+
+    @Column(name = "sender_bank_bic", length = 11)
+    private String senderBankBic;
 }
