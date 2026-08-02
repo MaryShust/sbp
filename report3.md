@@ -265,10 +265,10 @@ PaymentService
 ### 7.2 Проверка обоих узлов
 ```bash
 # Node 1
-curl http://localhost:8080/sbp/api/v1/payments/health
+curl http://localhost:8085/sbp/api/v1/payments/health
 
 # Node 2
-curl http://localhost:8081/sbp/api/v1/payments/health
+curl http://localhost:8086/sbp/api/v1/payments/health
 ```
 
 ### 7.3 Kafka распределение нагрузки

@@ -91,6 +91,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             FileParseException.class,
             ExchangeRateParseException.class,
+            BillNotBelongAccountExeption.class,
             Exception.class,
     })
     public ResponseEntity<Map<String, String>> handleGeneralException(Exception ex) {
